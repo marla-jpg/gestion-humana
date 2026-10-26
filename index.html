@@ -201,9 +201,9 @@ legend{font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--
    La publishable key (o anon key) es pública por diseño: los datos los protegen
    el inicio de sesión y las reglas del script SQL. NUNCA pegues aquí la secret key
    ni la service_role key. */
-window.GH_CONFIG = {sb_publishable_c2Ej8vA-nM3WbqqREIBEFA_l6GpglY5
-  supabaseUrl: "",
-  supabaseKey: ""
+window.GH_CONFIG = {
+  supabaseUrl: "https://sdaivdrwlxscczefhclt.supabase.co",
+  supabaseKey: "sb_publishable_c2Ej8vA-nM3WbqqREIBEFA_l6GpglY5"
 };
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -927,8 +927,8 @@ render();
 S.modo="web";
 const BUCKET="documentos";
 const ES_RECUPERACION=/type=recovery/.test(location.hash||"");
-const WEB_CFG=(()=>{ const g=window.GH_CONFIG||{sb_publishable_c2Ej8vA-nM3WbqqREIBEFA_l6GpglY5}; let c={}; try{ c=JSON.parse(localStorage.getItem("gh-config")||"{}"); }catch(_){}
-  return {url:String(g.supabaseUrl||c.url||"").trim().replace(/\/+$/,""), key:String(g.supabaseKey||c.key||"").trim(), local:!g.supabaseUrl}; })();
+const WEB_CFG=(()=>{ const g=window.GH_CONFIG||{}; let c={}; try{ c=JSON.parse(localStorage.getItem("gh-config")||"{}"); }catch(_){}
+  return {url:String(g.supabaseUrl||c.url||"").trim().replace(/\/(rest|auth|storage)\/v1.*$/,"").replace(/\/+$/,""), key:String(g.supabaseKey||c.key||"").trim(), local:!g.supabaseUrl}; })();
 let sb=null;
 
 function PANTALLA(){ const st=S.status; if(st==="ok") return null;
