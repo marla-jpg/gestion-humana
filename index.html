@@ -1,0 +1,1036 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="color-scheme" content="light dark">
+<style>
+html{-webkit-text-size-adjust:100%}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font-size:14px}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>Gestión Humana ASPM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: banda superior azul de la casa + panel de trabajo; ficha = resumen lateral + pestañas, como una carpeta de hoja de vida laboral */
+:root{
+  --bg:#F3F6FA; --surface:#FFFFFF; --label:#EAF0F7; --fg:#33373D; --muted:#66707C; --line:#D3DCE7;
+  --accent:#1F4E79; --accent-fg:#FFFFFF; --accent-soft:#E3ECF6; --head:#1F4E79; --head-fg:#FFFFFF; --head-muted:#B9CDE2;
+  --crit:#C00000; --crit-soft:#FDECEC; --warn:#8A5A00; --warn-soft:#FFF3C4; --ok:#1E7A46; --ok-soft:#E4F3EA; --info:#1F4E79; --info-soft:#E3ECF6;
+  --shadow:0 1px 2px rgba(20,40,70,.06),0 4px 16px rgba(20,40,70,.06);
+  --f-body:"Carlito","Calibri","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:8px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E1620; --surface:#15202C; --label:#1B2A3A; --fg:#E2E8EF; --muted:#94A2B1; --line:#283849;
+  --accent:#86B6E3; --accent-fg:#0E1620; --accent-soft:#1B2E43; --head:#132B44; --head-fg:#F1F5F9; --head-muted:#8FA9C4;
+  --crit:#FF8C85; --crit-soft:#3A1B1D; --warn:#F2CB5A; --warn-soft:#352C12; --ok:#74D19C; --ok-soft:#15301F; --info:#86B6E3; --info-soft:#1B2E43;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1620; --surface:#15202C; --label:#1B2A3A; --fg:#E2E8EF; --muted:#94A2B1; --line:#283849;
+  --accent:#86B6E3; --accent-fg:#0E1620; --accent-soft:#1B2E43; --head:#132B44; --head-fg:#F1F5F9; --head-muted:#8FA9C4;
+  --crit:#FF8C85; --crit-soft:#3A1B1D; --warn:#F2CB5A; --warn-soft:#352C12; --ok:#74D19C; --ok-soft:#15301F; --info:#86B6E3; --info-soft:#1B2E43;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25); color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--head)}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1240px;margin:0 auto}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--head);color:var(--head-fg)}
+.top .wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-block:10px}
+.brand{display:flex;flex-direction:column;line-height:1.1;margin-right:auto}
+.brand b{font-size:19px;letter-spacing:.01em}
+.brand span{font-size:12px;color:var(--head-muted);letter-spacing:.06em;text-transform:uppercase}
+nav.tabs{display:flex;gap:2px;flex-wrap:wrap}
+nav.tabs button{background:transparent;border:0;color:var(--head-muted);font:inherit;font-weight:700;padding:8px 12px;border-radius:6px;cursor:pointer}
+nav.tabs button:hover{color:var(--head-fg);background:rgba(255,255,255,.08)}
+nav.tabs button[aria-current="true"]{color:var(--head-fg);background:rgba(255,255,255,.16)}
+main{padding-block:20px 60px}
+h1{font-size:26px;margin:0;text-wrap:balance;line-height:1.15}
+h2{font-size:19px;margin:0;text-wrap:balance}
+h3{font-size:15px;margin:0;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.mono,.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:.9em}
+.muted{color:var(--muted)}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.spread{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.stack{display:grid;gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.pad{padding:16px 18px}
+.btn{font:inherit;font-weight:700;border-radius:6px;padding:8px 14px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.pri{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--accent);padding-inline:8px}
+.btn.ghost:hover{background:var(--accent-soft)}
+.btn.danger{color:var(--crit);border-color:var(--crit)}
+.btn.sm{padding:4px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.top .btn.pri{background:#fff;color:#1F4E79;border-color:#fff}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;letter-spacing:.02em}
+.c-crit{background:var(--crit-soft);color:var(--crit)}
+.c-warn{background:var(--warn-soft);color:var(--warn)}
+.c-ok{background:var(--ok-soft);color:var(--ok)}
+.c-info{background:var(--info-soft);color:var(--info)}
+.c-mute{background:var(--label);color:var(--muted)}
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile{padding:14px 16px}
+.tile .k{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700}
+.tile .v{font-family:var(--f-mono);font-size:26px;font-weight:500;margin-top:4px;font-variant-numeric:tabular-nums}
+.tile .s{font-size:13px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+/* alerts */
+.alerts{display:grid}
+.al{display:grid;grid-template-columns:6px minmax(0,1fr) auto;gap:12px;padding:12px 16px 12px 0;border-top:1px solid var(--line);cursor:pointer;align-items:start}
+.al:first-child{border-top:0}
+.al:hover{background:var(--label)}
+.al .bar{align-self:stretch;border-radius:0 3px 3px 0}
+.al.crit .bar{background:var(--crit)}.al.warn .bar{background:var(--warn)}.al.info .bar{background:var(--info)}
+.al .t{font-weight:700}
+.al .d{font-size:14px;color:var(--muted)}
+.al .when{font-family:var(--f-mono);font-size:12px;color:var(--muted);text-align:right;white-space:nowrap}
+.empty{padding:28px 18px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--fg);font-size:17px;margin-bottom:4px}
+/* bars */
+.bars{display:grid;gap:8px}
+.barrow{display:grid;grid-template-columns:minmax(0,9em) minmax(0,1fr) 2.5em;gap:8px;align-items:center;font-size:14px}
+.barrow .track{height:10px;background:var(--label);border-radius:5px;overflow:hidden}
+.barrow .fill{height:100%;background:var(--accent);border-radius:5px}
+.barrow .n{font-family:var(--f-mono);text-align:right;font-size:13px}
+/* list */
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 10px;min-width:0;max-width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
+.search{flex:1 1 220px}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--label);padding:8px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--label)}
+.who{display:flex;gap:10px;align-items:center;min-width:0}
+.av{width:34px;height:34px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+.av.lg{width:56px;height:56px;font-size:20px}
+.who b{display:block}
+.who small{color:var(--muted)}
+/* ficha */
+.ficha{display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px;align-items:start}
+.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px)}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px;font-size:14px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;text-align:right;overflow-wrap:anywhere}
+.subtabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto;padding-inline:8px}
+.subtabs button{font:inherit;font-weight:700;background:none;border:0;border-bottom:3px solid transparent;padding:12px 12px 9px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.subtabs button[aria-current="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+.subtabs .cnt{font-family:var(--f-mono);font-size:11px;background:var(--label);border-radius:8px;padding:0 6px;margin-left:4px}
+fieldset{border:0;margin:0;padding:0;display:grid;gap:10px}
+legend{font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--accent);font-weight:700;padding:0;margin-bottom:8px}
+.fgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 14px}
+.field{display:grid;gap:4px;min-width:0}
+.field label{font-size:13px;color:var(--muted);font-weight:700}
+.field .hint{font-size:12px;color:var(--muted)}
+.field.wide{grid-column:1/-1}
+.req::after{content:" *";color:var(--crit)}
+.formfoot{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:14px}
+.sep{border:0;border-top:1px solid var(--line);margin:4px 0}
+/* timeline contratos */
+.tl{display:grid;gap:0}
+.tli{display:grid;grid-template-columns:22px minmax(0,1fr);gap:12px}
+.tli .dot{position:relative}
+.tli .dot::before{content:"";position:absolute;left:10px;top:0;bottom:0;width:2px;background:var(--line)}
+.tli .dot::after{content:"";position:absolute;left:4px;top:18px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:3px solid var(--accent)}
+.tli.otro .dot::after{border-color:var(--muted);width:10px;height:10px;left:6px;top:20px}
+.tli:first-child .dot::before{top:22px}.tli:last-child .dot::before{bottom:calc(100% - 22px)}
+.tli .body{padding:12px 0;border-bottom:1px dashed var(--line);display:grid;gap:6px;min-width:0}
+.file{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.file .name{font-family:var(--f-mono);font-size:12px;overflow-wrap:anywhere}
+.doclist{display:grid}
+.docrow{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.docrow:first-child{border-top:0}
+.tick{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700}
+.tick.y{background:var(--ok-soft);color:var(--ok)}.tick.n{background:var(--warn-soft);color:var(--warn)}
+.addbox{background:var(--label);border-radius:var(--r);padding:14px}
+.banner{padding:10px 14px;border-radius:var(--r);font-size:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+/* informes */
+.reps{display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px;align-items:start}
+.replist{display:grid}
+.replist button{font:inherit;text-align:left;background:none;border:0;border-left:3px solid transparent;padding:10px 14px;cursor:pointer;color:var(--fg);display:grid;gap:2px}
+.replist button small{color:var(--muted);font-size:13px}
+.replist button:hover{background:var(--label)}
+.replist button[aria-current="true"]{border-left-color:var(--accent);background:var(--accent-soft)}
+/* modal & toast */
+.modal{position:fixed;inset:0;z-index:50;background:rgba(10,20,30,.55);display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.modal .box{background:var(--surface);border-radius:10px;max-width:520px;width:100%;max-height:100%;overflow:auto;padding:20px;display:grid;gap:14px}
+.modal .box.big{max-width:960px;height:100%;grid-template-rows:auto minmax(0,1fr)}
+.pdfview{overflow:auto;background:var(--label);border:1px solid var(--line);border-radius:6px;padding:12px;display:grid;justify-items:center;align-content:start;gap:12px;min-height:300px}
+.pdfpage{background:#fff;box-shadow:var(--shadow);max-width:100%}
+.modal iframe,.modal img.prev{width:100%;height:100%;border:1px solid var(--line);border-radius:6px;background:#fff;object-fit:contain;min-height:300px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:60;font-weight:700;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
+.loading{padding:40px;text-align:center;color:var(--muted)}
+@media (max-width:980px){.ficha,.reps,.grid2{grid-template-columns:minmax(0,1fr)}.side{position:static}.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.fgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.fgrid{grid-template-columns:minmax(0,1fr)}.hide-sm{display:none}.al{grid-template-columns:6px minmax(0,1fr)}.al .when{grid-column:2;text-align:left}h1{font-size:22px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap gut">
+  <div class="brand"><b>Gestión Humana</b><span>ASPM S.A.S. · Dosquebradas</span></div>
+  <nav class="tabs" id="nav">
+    <button data-act="nav" data-v="panel">Panel</button>
+    <button data-act="nav" data-v="empleados">Empleados</button>
+    <button data-act="nav" data-v="cargos">Cargos y KPI</button>
+    <button data-act="nav" data-v="informes">Informes</button>
+    <button data-act="nav" data-v="ajustes">Ajustes</button>
+  </nav>
+  <button class="btn pri" data-act="nuevo">+ Nuevo empleado</button>
+</div></header>
+<main class="gut"><div class="wrap" id="main"><div class="loading">Abriendo los expedientes…</div></div></main>
+<div id="modal"></div>
+<div id="toast" hidden class="toast"></div>
+<datalist id="dl-areas"></datalist><datalist id="dl-cargos"></datalist>
+<datalist id="dl-ciudades"><option>Dosquebradas</option><option>Pereira</option><option>Santa Rosa de Cabal</option><option>La Virginia</option><option>Marsella</option></datalist>
+<script>
+/* ===== CONFIGURACIÓN =====
+   Pega aquí los datos de tu proyecto de Supabase (Project Settings → API).
+   La publishable key (o anon key) es pública por diseño: los datos los protegen
+   el inicio de sesión y las reglas del script SQL. NUNCA pegues aquí la secret key
+   ni la service_role key. */
+window.GH_CONFIG = {sb_publishable_c2Ej8vA-nM3WbqqREIBEFA_l6GpglY5
+  supabaseUrl: "",
+  supabaseKey: ""
+};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
+<script>
+(function(){
+"use strict";
+/* ---------- constantes ---------- */
+const DEF = {smmlv:1750905, auxTransporte:249095, diasAlerta:45, empresa:"Alimentos Saludables para Mascotas S.A.S."};
+const AREAS = ["Producción","Calidad","Compras e Inventarios","Contabilidad y Finanzas","Comercial","Mercadeo","Logística y Despachos","Mantenimiento","Administración","Gerencia"];
+const TIPOS_CONTRATO = ["Término fijo","Término indefinido","Obra o labor","Aprendizaje SENA","Prestación de servicios"];
+const DOCS_REQ = ["Hoja de vida","Copia de cédula","Certificados de estudio","Referencias verificadas","Examen médico de ingreso","Afiliación EPS","Afiliación AFP","Afiliación ARL","Afiliación caja de compensación","Certificado manipulación de alimentos","Inducción SST","Autorización tratamiento de datos","Manual de funciones firmado"];
+const FRECUENCIAS = ["Mensual","Bimestral","Trimestral","Semestral","Anual"];
+const PASO_FREQ = {Mensual:1,Bimestral:2,Trimestral:3,Semestral:6,Anual:12};
+const TIPOS_NOV = ["Vacaciones","Incapacidad","Licencia","Permiso","Llamado de atención","Descargos","Capacitación","Examen médico ocupacional","Entrega de dotación","Entrega de EPP","Cambio salarial o de cargo","Otro"];
+const MOTIVOS = ["Renuncia voluntaria","Vencimiento del plazo pactado","Terminación con justa causa","Terminación sin justa causa","Mutuo acuerdo","Fin de obra o labor","Periodo de prueba no superado","Otro"];
+const CHECK_RETIRO = [["carta","Carta de renuncia o terminación"],["examen","Examen médico de egreso"],["paz","Paz y salvo"],["liq","Liquidación firmada"],["cert","Certificado laboral entregado"],["ss","Retiro de seguridad social"]];
+const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+
+const S = {view:"panel", emps:[], loaded:false, config:{...DEF}, db:null, user:null, assets:null, downloads:null, status:"init",
+  sel:null, ftab:"ficha", q:"", fArea:"", fEstado:"activo", fTipo:"", rep:"planta", rp:{dias:90, desde:"", hasta:"", tipo:"", anio:new Date().getFullYear(), mes:new Date().getMonth()}, dirty:false, stale:false, edit:null, importRows:null, usage:null, cargos:[], cargoSel:null, cargoNuevo:"", kpiPer:""};
+{ const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()-1); S.kpiPer=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; }
+
+/* ---------- utilidades ---------- */
+const $ = (s,r=document)=>r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid = () => Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-5);
+const clone = o => JSON.parse(JSON.stringify(o));
+const toD = s => { if(!s||typeof s!=="string") return null; const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(!m) return null; return new Date(+m[1],+m[2]-1,+m[3],12); };
+const today = () => { const n=new Date(); return new Date(n.getFullYear(),n.getMonth(),n.getDate(),12); };
+const iso = d => d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}` : "";
+const addDays = (d,n) => { const x=new Date(d); x.setDate(x.getDate()+n); return x; };
+const diff = (a,b) => Math.round((b-a)/86400000);
+const fmtD = s => { const d = typeof s==="string"?toD(s):s; return d ? d.toLocaleDateString("es-CO",{day:"2-digit",month:"short",year:"numeric"}).replace(/\./g,"") : "—"; };
+const dmy = s => { const d=toD(s); return d ? `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}` : ""; };
+const money = n => (n||n===0)&&n!=="" ? "$"+Math.round(Number(n)).toLocaleString("es-CO") : "—";
+const nombre = e => `${e.nombres||""} ${e.apellidos||""}`.trim() || "Sin nombre";
+const iniciales = e => ((e.nombres||"?")[0]+(e.apellidos||"")[0]||"").toUpperCase();
+function antig(e){ const a=toD(e.fechaIngreso); if(!a) return "—"; const b = e.estado==="retirado"&&e.retiro&&toD(e.retiro.fecha) ? toD(e.retiro.fecha) : today();
+  let m=(b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth()); if(b.getDate()<a.getDate()) m--; if(m<0) return "Aún no ingresa";
+  const y=Math.floor(m/12), mm=m%12; if(!y&&!mm) return `${diff(a,b)} días`; return [y?`${y} año${y>1?"s":""}`:"", mm?`${mm} mes${mm>1?"es":""}`:""].filter(Boolean).join(" y "); }
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true,3200); }
+
+/* ---------- reglas de negocio ---------- */
+const activos = () => S.emps.filter(e=>e.estado!=="retirado");
+const ordenC = e => (e.contratos||[]).slice().sort((a,b)=>(a.inicio||"").localeCompare(b.inicio||""));
+const contratos = e => ordenC(e).filter(c=>!c.esOtrosi);
+const vigente = e => { const c=contratos(e); return c[c.length-1]||null; };
+function renovaciones(e){ const c=contratos(e); let n=0; for(let i=c.length-1;i>=0;i--){ if(c[i].tipo==="Término fijo") n++; else break; } return Math.max(0,n-1); }
+function finPrueba(e){ if(e.periodoPruebaFin) return toD(e.periodoPruebaFin); const ing=toD(e.fechaIngreso); if(!ing) return null;
+  const c0=contratos(e)[0]; let dias=60;
+  if(c0&&c0.tipo==="Término fijo"&&c0.fin){ const dur=diff(toD(c0.inicio)||ing,toD(c0.fin))+1; if(dur<360) dias=Math.min(60,Math.floor(dur/5)); }
+  if(c0&&(c0.tipo==="Aprendizaje SENA"||c0.tipo==="Prestación de servicios")) return null;
+  return addDays(ing,dias); }
+function vacaciones(e){ const ing=toD(e.fechaIngreso); if(!ing) return {causados:0,tomados:0,compensados:0,pagado:0,saldo:0};
+  const fin = e.estado==="retirado"&&e.retiro&&toD(e.retiro.fecha)?toD(e.retiro.fecha):today();
+  const dias=Math.max(0,diff(ing,fin)+1); const causados=dias*15/360;
+  const vac=(e.novedades||[]).filter(n=>n.tipo==="Vacaciones");
+  const tomados=vac.reduce((s,n)=>s+(Number(n.dias)||0),0), compensados=vac.reduce((s,n)=>s+(Number(n.diasComp)||0),0), pagado=vac.reduce((s,n)=>s+(Number(n.valorComp)||0),0);
+  return {causados,tomados,compensados,pagado,saldo:causados-tomados-compensados}; }
+const aplicaAux = e => Number(e.salario)>0 && Number(e.salario) <= 2*S.config.smmlv;
+function proxDotacion(){ const t=today(), y=t.getFullYear(); const fechas=[new Date(y,3,30,12),new Date(y,7,31,12),new Date(y,11,20,12),new Date(y+1,3,30,12)];
+  const prox=fechas.find(f=>f>=t); const i=fechas.indexOf(prox); const prev = i>0?fechas[i-1]:new Date(y-1,11,20,12); return {prox,prev}; }
+function dotacionPendiente(){ const {prox,prev}=proxDotacion(); return activos().filter(e=>{ const ing=toD(e.fechaIngreso); if(!ing||!aplicaAux(e)) return false; if(diff(ing,prox)<90) return false;
+  return !(e.novedades||[]).some(n=>n.tipo==="Entrega de dotación"&&toD(n.desde)&&toD(n.desde)>prev); }); }
+
+function alertasDe(e){ const out=[], t=today(), cfg=S.config;
+  if(e.estado==="retirado") return out;
+  const c=vigente(e);
+  if(c&&c.tipo==="Término fijo"&&c.fin){ const fin=toD(c.fin), pre=addDays(fin,-30), dPre=diff(t,pre), dFin=diff(t,fin), r=renovaciones(e);
+    const nota = r>=3 ? " Ya lleva 3 renovaciones: la siguiente debe ser por mínimo 1 año." : "";
+    if(dFin<0) out.push({n:"crit",tipo:"Contrato vencido sin registrar",fecha:c.fin,txt:`Terminó el ${fmtD(c.fin)}. Registra la renovación o el retiro.`});
+    else if(dPre<0) out.push({n:"crit",tipo:"Preaviso vencido",fecha:c.fin,txt:`El preaviso era hasta el ${fmtD(pre)}. Si no se entregó, el contrato se prorroga por un periodo igual.${nota}`});
+    else if(dPre<=cfg.diasAlerta) out.push({n:dPre<=10?"crit":"warn",tipo:"Decidir renovación",fecha:iso(pre),txt:`Preaviso a más tardar el ${fmtD(pre)} (faltan ${dPre} días). Vence el ${fmtD(c.fin)}.${nota}`}); }
+  const fp=finPrueba(e); if(fp){ const d=diff(t,fp); if(d>=0&&d<=20) out.push({n:"warn",tipo:"Termina el periodo de prueba",fecha:iso(fp),txt:`Evaluar desempeño antes del ${fmtD(fp)} (faltan ${d} días).`}); }
+  for(const k of ordenC(e)) if(!k.archivo) out.push({n:"info",tipo:k.esOtrosi?"Otrosí sin documento firmado":"Contrato sin documento firmado",fecha:k.inicio,txt:`${k.tipo||"Contrato"} desde ${fmtD(k.inicio)}: sube el PDF firmado.`});
+  const ex=(e.novedades||[]).filter(n=>n.tipo==="Examen médico ocupacional"&&n.desde).map(n=>n.desde).sort().pop();
+  const ing=toD(e.fechaIngreso);
+  if(ex){ const d=diff(toD(ex),t); if(d>365) out.push({n:"warn",tipo:"Examen médico periódico vencido",fecha:iso(addDays(toD(ex),365)),txt:`El último examen fue el ${fmtD(ex)}.`}); }
+  else if(ing&&diff(ing,t)>30) out.push({n:"info",tipo:"Sin examen médico registrado",fecha:e.fechaIngreso,txt:"Registra el examen de ingreso o el último periódico en Novedades."});
+  for(const d of (e.documentos||[])) if(d.vence){ const dd=diff(t,toD(d.vence)); if(dd<0) out.push({n:"crit",tipo:`${d.categoria} vencido`,fecha:d.vence,txt:`Venció el ${fmtD(d.vence)}.`}); else if(dd<=30) out.push({n:"warn",tipo:`${d.categoria} por vencer`,fecha:d.vence,txt:`Vence el ${fmtD(d.vence)} (faltan ${dd} días).`}); }
+  for(const n of (e.novedades||[])) if(n.tipo==="Vacaciones"&&Number(n.diasComp)>(Number(n.dias)||0)) out.push({n:"warn",tipo:"Vacaciones pagadas en dinero por encima de la mitad",fecha:n.desde,txt:`El ${fmtD(n.desde)} se pagaron ${n.diasComp} días en dinero y se disfrutaron ${Number(n.dias)||0}. Con el contrato vigente solo se puede compensar hasta la mitad, por acuerdo escrito.`});
+  const v=vacaciones(e); if(v.saldo>=30) out.push({n:"warn",tipo:"Vacaciones acumuladas",fecha:"",txt:`Tiene ${v.saldo.toFixed(1)} días hábiles pendientes (dos periodos o más).`});
+  return out; }
+const RANK={crit:0,warn:1,info:2};
+function todasAlertas(){ const a=[]; for(const e of activos()) for(const x of alertasDe(e)) a.push({...x,e}); return a.sort((x,y)=>RANK[x.n]-RANK[y.n]||(x.fecha||"9").localeCompare(y.fecha||"9")); }
+
+/* ---------- datos ---------- */
+const queues={};
+function saveEmp(e){ if(!S.db) return Promise.reject({code:"unavailable"}); const id=e.id; const body=clone(e); delete body.id; body.actualizado=new Date().toISOString();
+  const p=(queues[id]||Promise.resolve()).then(()=>S.db.doc("empleados/"+id).set(body)); queues[id]=p.catch(()=>{}); return p; }
+const getEmp = id => { const e=S.emps.find(x=>x.id===id); return e?clone(e):null; };
+function saveCargo(c){ if(!S.db) return Promise.reject({code:"unavailable"}); const id=c.id; const body=clone(c); delete body.id; body.actualizado=new Date().toISOString();
+  const k="c:"+id; const p=(queues[k]||Promise.resolve()).then(()=>S.db.doc("cargos/"+id).set(body)); queues[k]=p.catch(()=>{}); return p; }
+const getCargo = id => { const c=S.cargos.find(x=>x.id===id); return c?clone(c):null; };
+/* cargos y KPI */
+const norm = s => String(s||"").trim().toLowerCase();
+const cargoDe = e => S.cargos.find(c=>norm(c.nombre)===norm(e.cargo)) || null;
+const personasCargo = c => activos().filter(e=>norm(e.cargo)===norm(c.nombre));
+function cumpl(k,v){ const m=Number(k.meta), x=Number(v); if(v===""||v==null||isNaN(x)||k.meta===""||k.meta==null||isNaN(m)) return null;
+  if(k.sentido==="menor"){ if(x<=m) return 100+(m?Math.min(50,(m-x)/m*100):0); return m===0?0:m/x*100; } if(m===0) return x>=0?100:0; return x/m*100; }
+const semaforo = p => p==null?"c-mute": p>=100?"c-ok": p>=80?"c-warn":"c-crit";
+const pctTxt = p => p==null?"—":`${Math.round(Math.min(p,150))} %`;
+const mesTxt = p => { if(!p) return "—"; const [y,m]=p.split("-"); return `${MESES[+m-1]||"?"} ${y}`; };
+function tocaMedir(k,per){ const paso=PASO_FREQ[k.frecuencia]||1; return ((+per.split("-")[1]-1)%paso)===paso-1 || paso===1; }
+function medicionesDe(c,kId,per){ return (c.mediciones||[]).filter(m=>m.kpiId===kId&&(!per||m.periodo===per)); }
+function ultimoPeriodo(c){ const ps=(c.mediciones||[]).map(m=>m.periodo).sort(); return ps[ps.length-1]||""; }
+function kpiPendientes(per){ let n=0; for(const c of S.cargos){ if(!personasCargo(c).length) continue; for(const k of (c.kpis||[])) if(tocaMedir(k,per)&&!medicionesDe(c,k.id,per).length) n++; } return n; }
+function errMsg(err){ const c=err&&err.code; return ({quota_exceeded:"Se llenó el espacio de la base de datos. Borra registros antiguos.",invalid_argument:"No tienes permiso para guardar en esta app o el dato no es válido.",resource_exhausted:"Demasiadas operaciones seguidas. Espera un momento.",too_large:"El archivo supera 20 MB. Comprímelo o divídelo.",unsupported_type:"Solo se aceptan PDF, JPG, PNG o WEBP.",quota_or_state:"Se llenó el espacio de archivos de la app.",rate_limited:"Demasiadas cargas seguidas. Espera un momento.",not_granted:"Esta vista no permite esa acción."})[c] || "No se pudo completar. Revisa la conexión e intenta de nuevo."; }
+async function subir(file){ if(!S.assets) throw {code:"not_granted"}; const ext=(file.name.split(".").pop()||"").toLowerCase();
+  const type={pdf:"application/pdf",png:"image/png",jpg:"image/jpeg",jpeg:"image/jpeg",webp:"image/webp"}[ext]; if(!type) throw {code:"unsupported_type"};
+  const r=await S.assets.upload(file,{type}); return {id:r.id,nombre:file.name,tipo:r.contentType,peso:r.sizeBytes,subido:new Date().toISOString()}; }
+async function borrarArchivo(a){ if(a&&a.id&&S.assets){ try{ await S.assets.delete(a.id); }catch(_){} } }
+async function descargarArchivo(a){ if(!S.downloads){ toast("Las descargas no están disponibles en esta vista."); return; }
+  try{ const blob=await obtenerBlob(a); await S.downloads.save({filename:a.nombre||"documento.pdf",data:blob}); }
+  catch(err){ if(err&&err.code==="declined") return; toast("No se pudo descargar el archivo."); } }
+
+/* ---------- modal ---------- */
+function confirmar(titulo,msg,ok="Confirmar",peligro=true){ return new Promise(res=>{ const m=$("#modal");
+  m.innerHTML=`<div class="modal"><div class="box" role="dialog" aria-modal="true"><h2>${esc(titulo)}</h2><p class="muted" style="margin:0">${esc(msg)}</p><div class="formfoot" style="border:0;padding:0"><button class="btn" id="mc-no">Cancelar</button><button class="btn ${peligro?"danger":"pri"}" id="mc-ok">${esc(ok)}</button></div></div></div>`;
+  const close=v=>{m.innerHTML="";res(v);}; $("#mc-no").onclick=()=>close(false); $("#mc-ok").onclick=()=>close(true); $("#mc-ok").focus(); }); }
+const obtenerBlob = a => S.blob ? S.blob(a.id) : fetch("/_blob/"+a.id).then(r=>{ if(!r.ok) throw 0; return r.blob(); });
+function verArchivo(a){ const m=$("#modal"); const isImg=(a.tipo||"").startsWith("image/");
+  m.innerHTML=`<div class="modal"><div class="box big" role="dialog" aria-modal="true"><div class="spread"><b class="mono" style="overflow-wrap:anywhere">${esc(a.nombre)}</b><div class="row"><button class="btn sm" id="mv-dl">Descargar</button><button class="btn sm pri" id="mv-x">Cerrar</button></div></div>
+  ${isImg?`<img class="prev" id="mv-img" alt="${esc(a.nombre)}">`:`<div class="pdfview" id="mv-pdf" tabindex="0" aria-label="${esc(a.nombre)}"></div>`}</div></div>`;
+  $("#mv-x").onclick=()=>m.innerHTML=""; $("#mv-dl").onclick=()=>descargarArchivo(a);
+  if(isImg) obtenerBlob(a).then(b=>{ const i=$("#mv-img"); if(i) i.src=URL.createObjectURL(b); }).catch(()=>toast("No se pudo abrir la imagen.")); else verPdf($("#mv-pdf"),a); }
+const PDFJS="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+function cargarScript(u){ return new Promise((ok,ko)=>{ const sc=document.createElement("script"); sc.src=u; sc.onload=ok; sc.onerror=ko; document.head.appendChild(sc); }); }
+let pdfjsListo=null;
+function cargarPdfjs(){ if(!pdfjsListo) pdfjsListo=cargarScript(PDFJS+"pdf.worker.min.js").then(()=>cargarScript(PDFJS+"pdf.min.js")).catch(e=>{ pdfjsListo=null; throw e; }); return pdfjsListo; }
+async function verPdf(cont,a){ cont.innerHTML=`<div class="loading">Abriendo documento…</div>`;
+  try{ await cargarPdfjs(); const data=new Uint8Array(await (await obtenerBlob(a)).arrayBuffer());
+    const pdf=await window.pdfjsLib.getDocument({data,isEvalSupported:false}).promise; cont.innerHTML="";
+    const ancho=Math.max(200,cont.clientWidth-26), dpr=Math.min(2,window.devicePixelRatio||1);
+    for(let i=1;i<=pdf.numPages;i++){ if(!cont.isConnected) return; const page=await pdf.getPage(i); const base=page.getViewport({scale:1}); const esc1=Math.min(2,ancho/base.width);
+      const vp=page.getViewport({scale:esc1*dpr}); const c=document.createElement("canvas"); c.className="pdfpage"; c.width=Math.floor(vp.width); c.height=Math.floor(vp.height); c.style.width=Math.floor(vp.width/dpr)+"px"; c.setAttribute("aria-label","Página "+i+" de "+pdf.numPages);
+      cont.appendChild(c); await page.render({canvasContext:c.getContext("2d"),viewport:vp}).promise; } }
+  catch(_){ if(cont.isConnected) cont.innerHTML=`<div class="empty"><b>No se pudo mostrar el documento aquí</b>Usa “Descargar” para abrirlo en tu equipo.</div>`; } }
+
+/* ---------- vistas ---------- */
+function setView(v,keepDirty){ S.view=v; S.edit=null; if(!keepDirty) S.dirty=false; try{ if(["panel","empleados","cargos","informes","ajustes"].includes(v)) history.replaceState(null,"","#"+v); }catch(_){} render(); window.scrollTo(0,0); }
+function render(){ document.querySelectorAll("#nav button").forEach(b=>b.setAttribute("aria-current", String(b.dataset.v===S.view || (S.view==="ficha"&&b.dataset.v==="empleados") || (S.view==="cargo"&&b.dataset.v==="cargos"))));
+  fillLists(); const m=$("#main");
+  if(typeof PANTALLA==="function"){ const h=PANTALLA(); if(h!=null){ m.innerHTML=h; return; } }
+  if(S.status==="nodb"){ m.innerHTML=`<div class="card empty"><b>Este espacio es privado</b>Los expedientes de Gestión Humana de ASPM solo los ven el propietario y las personas que él invite como Editor.</div>`; return; }
+  if(!S.loaded){ m.innerHTML=`<div class="loading">Abriendo los expedientes…</div>`; return; }
+  const v=S.view; m.innerHTML = v==="panel"?vPanel(): v==="empleados"?vLista(): v==="ficha"?vFicha(): v==="nuevo"?vNuevo(): v==="cargos"?vCargos(): v==="cargo"?vCargo(): v==="informes"?vInformes(): vAjustes();
+  S.stale=false; }
+function fillLists(){ const areas=new Set(AREAS), cargos=new Set(); S.emps.forEach(e=>{ if(e.area) areas.add(e.area); if(e.cargo) cargos.add(e.cargo); }); S.cargos.forEach(c=>{ if(c.nombre) cargos.add(c.nombre); if(c.area) areas.add(c.area); });
+  $("#dl-areas").innerHTML=[...areas].map(a=>`<option>${esc(a)}</option>`).join(""); $("#dl-cargos").innerHTML=[...cargos].sort().map(a=>`<option>${esc(a)}</option>`).join(""); }
+const chipEstado = e => e.estado==="retirado" ? `<span class="chip c-mute">Retirado</span>` : `<span class="chip c-ok">Activo</span>`;
+function ejemplosBanner(){ const n=S.emps.filter(e=>e.ejemplo).length, nc=S.cargos.filter(c=>c.ejemplo).length; if(!n&&!nc) return "";
+  return `<div class="banner c-warn"><span><b>${n} empleados${nc?` y ${nc} cargo`:""} de ejemplo</b> para que veas cómo funciona. Bórralos cuando cargues los reales.</span><button class="btn sm" data-act="borrar-ejemplos">Borrar ejemplos</button></div>`; }
+
+function vPanel(){ const act=activos(), al=todasAlertas(), t=today();
+  const venc90=act.filter(e=>{ const c=vigente(e); return c&&c.tipo==="Término fijo"&&c.fin&&diff(t,toD(c.fin))>=0&&diff(t,toD(c.fin))<=90; }).length;
+  const crit=al.filter(a=>a.n==="crit").length; const nomina=act.reduce((s,e)=>s+(Number(e.salario)||0),0);
+  const porArea={}; act.forEach(e=>porArea[e.area||"Sin área"]=(porArea[e.area||"Sin área"]||0)+1); const maxA=Math.max(1,...Object.values(porArea));
+  const porTipo={}; act.forEach(e=>{ const c=vigente(e); const k=c?c.tipo:"Sin contrato"; porTipo[k]=(porTipo[k]||0)+1; });
+  const cumple=act.filter(e=>{ const d=toD(e.fechaNacimiento); return d&&d.getMonth()===t.getMonth(); }).sort((a,b)=>toD(a.fechaNacimiento).getDate()-toD(b.fechaNacimiento).getDate());
+  const {prox}=proxDotacion(), dot=dotacionPendiente();
+  if(!S.emps.length) return `<div class="stack"><h1>Panel</h1><div class="card empty"><b>Todavía no hay empleados</b>Crea el primero con “+ Nuevo empleado” o impórtalos todos desde Excel en Ajustes.<div class="row" style="justify-content:center;margin-top:14px"><button class="btn pri" data-act="nuevo">+ Nuevo empleado</button><button class="btn" data-act="nav" data-v="ajustes">Importar desde Excel</button></div></div></div>`;
+  return `<div class="stack">${ejemplosBanner()}
+  <div class="spread"><h1>Panel</h1><span class="muted">${fmtD(t)}</span></div>
+  <div class="tiles">
+    <div class="card tile"><div class="k">Personal activo</div><div class="v">${act.length}</div><div class="s">${S.emps.length-act.length} retirados en el archivo</div></div>
+    <div class="card tile"><div class="k">Alertas urgentes</div><div class="v" style="color:${crit?"var(--crit)":"inherit"}">${crit}</div><div class="s">${al.length} alertas abiertas en total</div></div>
+    <div class="card tile"><div class="k">Contratos fijos que vencen</div><div class="v">${venc90}</div><div class="s">en los próximos 90 días</div></div>
+    <div class="card tile"><div class="k">Salarios básicos / mes</div><div class="v" style="font-size:21px">${money(nomina)}</div><div class="s">sin prestaciones ni aportes</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><div class="pad spread"><h2>Qué hay que atender</h2><button class="btn ghost sm" data-act="rep-go" data-r="alertas">Descargar lista</button></div>
+      <div class="alerts">${al.length? al.slice(0,40).map(a=>`<div class="al ${a.n}" data-act="ver" data-id="${a.e.id}" tabindex="0"><span class="bar"></span><div><div class="t">${esc(a.tipo)} · ${esc(nombre(a.e))}</div><div class="d">${esc(a.txt)}</div></div><div class="when">${a.fecha?fmtD(a.fecha):""}</div></div>`).join("") : `<div class="empty"><b>Todo al día</b>No hay contratos, periodos de prueba ni documentos por vencer.</div>`}</div></div>
+    <div class="stack">
+      <div class="card pad stack"><h3>Próxima dotación</h3><div><b style="font-size:20px">${fmtD(prox)}</b><div class="muted" style="font-size:14px">${dot.length} ${dot.length===1?"persona pendiente":"personas pendientes"} de entrega (salario hasta 2 SMMLV y 3 meses de antigüedad)</div></div>${dot.length?`<div class="muted" style="font-size:14px">${dot.slice(0,8).map(e=>esc(nombre(e))).join(", ")}${dot.length>8?"…":""}</div>`:""}</div>
+      ${(()=>{ const nombres=[...new Set(act.map(e=>norm(e.cargo)).filter(Boolean))]; const conM=nombres.filter(n=>{ const c=S.cargos.find(x=>norm(x.nombre)===n); return c&&(c.manual||(c.funciones||[]).length); }).length; const pend=kpiPendientes(S.kpiPer);
+        return `<div class="card pad stack" data-act="nav" data-v="cargos" style="cursor:pointer"><h3>Manuales y KPI</h3><div class="kv"><dt>Cargos con manual</dt><dd class="num">${conM} de ${nombres.length}</dd><dt>KPI sin medir (${esc(mesTxt(S.kpiPer))})</dt><dd class="num" style="color:${pend?"var(--warn)":"inherit"}">${pend}</dd></div></div>`; })()}
+      <div class="card pad stack"><h3>Personal por área</h3><div class="bars">${Object.entries(porArea).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<div class="barrow"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(k)}">${esc(k)}</span><span class="track"><span class="fill" style="display:block;width:${n/maxA*100}%"></span></span><span class="n">${n}</span></div>`).join("")}</div>
+        <hr class="sep"><div class="row">${Object.entries(porTipo).map(([k,n])=>`<span class="chip c-info">${esc(k)} · ${n}</span>`).join("")}</div></div>
+      <div class="card pad stack"><h3>Cumpleaños de ${MESES[t.getMonth()]}</h3>${cumple.length?`<div class="kv">${cumple.map(e=>`<dt>${esc(nombre(e))}</dt><dd class="num">${toD(e.fechaNacimiento).getDate()} ${MESES[t.getMonth()].slice(0,3)}</dd>`).join("")}</div>`:`<span class="muted">Nadie cumple años este mes.</span>`}</div>
+    </div>
+  </div></div>`; }
+
+function filtrados(){ const q=S.q.trim().toLowerCase();
+  return S.emps.filter(e=>(S.fEstado===""||(S.fEstado==="activo"?e.estado!=="retirado":e.estado==="retirado"))&&(!S.fArea||e.area===S.fArea)&&(!S.fTipo||(vigente(e)||{}).tipo===S.fTipo)
+    &&(!q||[nombre(e),e.documento,e.cargo,e.area].join(" ").toLowerCase().includes(q))).sort((a,b)=>nombre(a).localeCompare(nombre(b),"es")); }
+function vLista(){ const list=filtrados(); const areas=[...new Set(S.emps.map(e=>e.area).filter(Boolean))].sort();
+  const rows=list.map(e=>{ const c=vigente(e), al=alertasDe(e); const worst=al.length?al.slice().sort((a,b)=>RANK[a.n]-RANK[b.n])[0]:null;
+    return `<tr class="click" data-act="ver" data-id="${e.id}"><td><div class="who"><span class="av">${esc(iniciales(e))}</span><div style="min-width:0"><b>${esc(nombre(e))}</b><small>${esc(e.cargo||"")}</small></div></div></td>
+    <td class="hide-sm">${esc(e.area||"—")}</td><td class="hide-sm num">${fmtD(e.fechaIngreso)}</td>
+    <td>${c?`${esc(c.tipo)}${c.fin?`<br><small class="muted num">vence ${fmtD(c.fin)}</small>`:""}`:`<span class="muted">—</span>`}</td>
+    <td>${e.estado==="retirado"?chipEstado(e):worst?`<span class="chip c-${worst.n}">${esc(worst.tipo)}${al.length>1?` +${al.length-1}`:""}</span>`:`<span class="chip c-ok">Al día</span>`}</td></tr>`; }).join("");
+  return `<div class="stack">${ejemplosBanner()}<div class="spread"><h1>Empleados</h1><span class="muted">${list.length} de ${S.emps.length}</span></div>
+  <div class="filters"><input class="search" id="f-q" type="search" placeholder="Buscar por nombre, cédula o cargo" value="${esc(S.q)}">
+    <select id="f-estado"><option value="activo" ${S.fEstado==="activo"?"selected":""}>Activos</option><option value="retirado" ${S.fEstado==="retirado"?"selected":""}>Retirados</option><option value="" ${S.fEstado===""?"selected":""}>Todos</option></select>
+    <select id="f-area"><option value="">Todas las áreas</option>${areas.map(a=>`<option ${a===S.fArea?"selected":""}>${esc(a)}</option>`).join("")}</select>
+    <select id="f-tipo"><option value="">Todo tipo de contrato</option>${TIPOS_CONTRATO.map(a=>`<option ${a===S.fTipo?"selected":""}>${esc(a)}</option>`).join("")}</select></div>
+  <div class="card tablewrap">${list.length?`<table><thead><tr><th>Empleado</th><th class="hide-sm">Área</th><th class="hide-sm">Ingreso</th><th>Contrato</th><th>Estado</th></tr></thead><tbody>${rows}</tbody></table>`:`<div class="empty"><b>Sin resultados</b>${S.emps.length?"Cambia la búsqueda o los filtros.":"Crea el primer empleado con “+ Nuevo empleado”."}</div>`}</div></div>`; }
+
+/* --- formulario de ficha --- */
+const GRUPOS = [
+ ["Datos personales",[["nombres","Nombres","text",{req:1}],["apellidos","Apellidos","text",{req:1}],["tipoDoc","Tipo de documento","select",{opts:["CC","CE","PPT","Pasaporte","TI"]}],["documento","Número de documento","text",{req:1,mono:1}],["fechaNacimiento","Fecha de nacimiento","date"],["telefono","Celular","tel"],["email","Correo","email"],["direccion","Dirección","text"],["ciudad","Municipio","text",{list:"dl-ciudades"}]]],
+ ["Cargo y salario",[["cargo","Cargo","text",{req:1,list:"dl-cargos"}],["area","Área","text",{req:1,list:"dl-areas"}],["jefe","Jefe inmediato","text"],["fechaIngreso","Fecha de ingreso","date",{req:1}],["salario","Salario básico mensual","number",{mono:1,min:0,step:1}],["periodoPruebaFin","Fin del periodo de prueba","date",{hint:"Vacío = se calcula: 2 meses, o 1/5 si el contrato fijo es menor a un año."}]]],
+ ["Seguridad social",[["eps","EPS","text"],["afp","Fondo de pensiones","text"],["cesantias","Fondo de cesantías","text"],["arl","ARL","text"],["riesgoArl","Clase de riesgo ARL","select",{opts:["","I","II","III","IV","V"]}],["ccf","Caja de compensación","text"],["banco","Banco para nómina","text"]]],
+ ["Contacto de emergencia",[["emergNombre","Nombre","text"],["emergParentesco","Parentesco","text"],["emergTel","Teléfono","tel"]]],
+ ["Datos complementarios y dotación",[["estadoCivil","Estado civil","text"],["nivelEstudios","Nivel de estudios","text"],["numHijos","Número de hijos","text",{mono:1}],["rh","Grupo sanguíneo y RH","text",{mono:1}],["tallaCamisa","Talla de camisa","text",{mono:1}],["tallaPantalon","Talla de pantalón","text",{mono:1}],["tallaCalzado","Talla de calzado","text",{mono:1}]]],
+];
+function campo([k,l,t,o={}],v){ const id="e-"+k; const val=v??""; let inp;
+  if(t==="select") inp=`<select id="${id}" name="${k}">${o.opts.map(x=>`<option ${x===val?"selected":""}>${esc(x)}</option>`).join("")}</select>`;
+  else inp=`<input id="${id}" name="${k}" type="${t}" value="${esc(val)}" ${o.req?"required":""} ${o.list?`list="${o.list}"`:""} ${o.min!=null?`min="${o.min}"`:""} ${o.step?`step="${o.step}"`:""} ${o.mono?`class="mono"`:""}>`;
+  return `<div class="field ${o.wide?"wide":""}"><label for="${id}" class="${o.req?"req":""}">${esc(l)}</label>${inp}${o.hint?`<span class="hint">${esc(o.hint)}</span>`:""}</div>`; }
+const formGrupos = e => GRUPOS.map(([g,fs])=>`<fieldset><legend>${esc(g)}</legend><div class="fgrid">${fs.map(f=>campo(f,e[f[0]])).join("")}</div></fieldset>`).join(`<hr class="sep">`);
+function leerForm(form){ const o={}; new FormData(form).forEach((v,k)=>{ o[k]=typeof v==="string"?v.trim():v; }); if("salario" in o) o.salario=o.salario===""?"":Number(o.salario); return o; }
+
+function vNuevo(){ return `<div class="stack"><div class="row"><button class="btn ghost" data-act="nav" data-v="empleados">← Empleados</button></div><h1>Nuevo empleado</h1>
+  <form class="card pad stack" data-form="nuevo">${formGrupos({tipoDoc:"CC",ciudad:"Dosquebradas"})}<hr class="sep">
+  <fieldset><legend>Contrato inicial</legend><div class="fgrid">
+    <div class="field"><label for="n-ctipo" class="req">Tipo de contrato</label><select id="n-ctipo" name="ctTipo">${TIPOS_CONTRATO.map(t=>`<option>${t}</option>`).join("")}</select></div>
+    <div class="field"><label for="n-cfin">Fecha de terminación</label><input id="n-cfin" name="ctFin" type="date"><span class="hint">Solo para término fijo, obra o aprendizaje.</span></div>
+    <div class="field"><label for="n-cfile">Contrato firmado (PDF o foto)</label><input id="n-cfile" name="ctFile" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp"></div>
+  </div></fieldset>
+  <div class="formfoot"><button type="button" class="btn" data-act="nav" data-v="empleados">Cancelar</button><button class="btn pri" type="submit">Crear empleado</button></div></form></div>`; }
+
+function vFicha(){ const e=S.emps.find(x=>x.id===S.sel); if(!e) return `<div class="card empty"><b>Este empleado ya no existe</b><button class="btn" data-act="nav" data-v="empleados">Volver a la lista</button></div>`;
+  const c=vigente(e), v=vacaciones(e), al=alertasDe(e), fp=finPrueba(e);
+  const tabs=[["ficha","Ficha"],["contratos","Contratos",ordenC(e).length],["documentos","Documentos",(e.documentos||[]).length],["novedades","Novedades",(e.novedades||[]).length],["funciones","Funciones y KPI"],["retiro",e.estado==="retirado"?"Retiro":"Retiro"]];
+  const body = S.ftab==="contratos"?tContratos(e): S.ftab==="documentos"?tDocumentos(e): S.ftab==="novedades"?tNovedades(e): S.ftab==="retiro"?tRetiro(e): S.ftab==="funciones"?tFunciones(e): tFicha(e);
+  return `<div class="stack"><div class="row"><button class="btn ghost" data-act="nav" data-v="empleados">← Empleados</button>${e.ejemplo?`<span class="chip c-warn">Ejemplo</span>`:""}</div>
+  <div class="ficha"><aside class="card pad stack side">
+    <div class="who"><span class="av lg">${esc(iniciales(e))}</span><div style="min-width:0"><h2>${esc(nombre(e))}</h2><div class="muted">${esc(e.cargo||"")}</div></div></div>
+    <div class="row">${chipEstado(e)}<span class="chip c-info">${esc(e.area||"Sin área")}</span></div>
+    <dl class="kv"><dt>Documento</dt><dd class="num">${esc(e.tipoDoc||"")} ${esc(e.documento||"—")}</dd><dt>Ingreso</dt><dd class="num">${fmtD(e.fechaIngreso)}</dd><dt>Antigüedad</dt><dd>${antig(e)}</dd>
+      <dt>Contrato</dt><dd>${c?esc(c.tipo):"—"}</dd>${c&&c.fin?`<dt>Vence</dt><dd class="num">${fmtD(c.fin)}</dd>`:""}${c&&c.tipo==="Término fijo"?`<dt>Renovaciones</dt><dd class="num">${renovaciones(e)}</dd>`:""}
+      ${fp?`<dt>Fin prueba</dt><dd class="num">${fmtD(fp)}</dd>`:""}<dt>Salario</dt><dd class="num">${money(e.salario)}</dd><dt>Aux. transporte</dt><dd>${Number(e.salario)?(aplicaAux(e)?money(S.config.auxTransporte):"No aplica"):"—"}</dd>
+      <dt>Vacaciones</dt><dd class="num">${v.saldo.toFixed(1)} días</dd></dl>
+    ${al.length?`<div class="stack" style="gap:6px">${al.map(a=>`<span class="chip c-${a.n}" style="white-space:normal">${esc(a.tipo)}</span>`).join("")}</div>`:`<span class="chip c-ok">Sin pendientes</span>`}
+    <button class="btn sm" data-act="ficha-xlsx">Descargar ficha en Excel</button>
+  </aside>
+  <section class="card" style="min-width:0"><div class="subtabs">${tabs.map(([k,l,n])=>`<button data-act="ftab" data-t="${k}" aria-current="${S.ftab===k}">${l}${n?`<span class="cnt">${n}</span>`:""}</button>`).join("")}</div><div class="pad">${body}</div></section></div></div>`; }
+
+function tFicha(e){ return `<form class="stack" data-form="ficha">${formGrupos(e)}<fieldset><legend>Observaciones</legend><textarea id="e-obs" name="observaciones" rows="3">${esc(e.observaciones||"")}</textarea></fieldset>
+  <div class="formfoot"><button class="btn pri" type="submit">Guardar cambios</button></div></form>`; }
+function fileCtl(a,scope,ref,okL="Firmado",upL="Subir firmado"){ return a?`<div class="file"><span class="chip c-ok">${okL}</span><span class="name">${esc(a.nombre)}</span><button type="button" class="btn sm" data-act="file-ver" data-s="${scope}" data-r="${ref}">Ver</button><button type="button" class="btn sm" data-act="file-dl" data-s="${scope}" data-r="${ref}">Descargar</button>${S.assets?`<label class="btn ghost sm">Reemplazar<input type="file" hidden accept=".pdf,.jpg,.jpeg,.png,.webp" data-up="${scope}" data-r="${ref}"></label>`:""}</div>`
+  : S.assets?`<div class="file"><span class="chip c-warn">Sin documento</span><label class="btn sm">${upL}<input type="file" hidden accept=".pdf,.jpg,.jpeg,.png,.webp" data-up="${scope}" data-r="${ref}"></label></div>`:`<span class="chip c-warn">Sin documento</span>`; }
+
+function tContratos(e){ const list=ordenC(e).reverse(); const c=vigente(e); let n=0; const numeros={}; contratos(e).forEach((k,i)=>numeros[k.id]=i);
+  const r=renovaciones(e); let pre={inicio:"",fin:"",tipo:c?c.tipo:"Término fijo",salario:e.salario||"",cargo:e.cargo||""};
+  if(c&&c.fin){ const ini=toD(c.inicio), fin=toD(c.fin); const dur=diff(ini,fin); const ni=addDays(fin,1); let nf=addDays(ni,dur); if(r>=3&&dur<364){ nf=new Date(ni); nf.setFullYear(nf.getFullYear()+1); nf=addDays(nf,-1); } pre.inicio=iso(ni); pre.fin=iso(nf); }
+  return `<div class="stack">${c&&c.tipo==="Término fijo"?`<div class="banner c-info"><span>Contrato fijo vigente hasta <b>${fmtD(c.fin)}</b>. Preaviso de no renovación a más tardar el <b>${fmtD(iso(addDays(toD(c.fin),-30)))}</b>.${r>=3?" Lleva 3 renovaciones o más: la próxima debe pactarse por mínimo 1 año.":""}</span></div>`:""}
+  ${list.length?`<div class="tl">${list.map(k=>`<div class="tli ${k.esOtrosi?"otro":""}"><span class="dot"></span><div class="body">
+    <div class="spread"><b>${k.esOtrosi?"Otrosí":esc(k.tipo)}${!k.esOtrosi&&numeros[k.id]>0&&k.tipo==="Término fijo"?` <span class="chip c-info">Renovación ${numeros[k.id]}</span>`:""}${k===c?` <span class="chip c-ok">Vigente</span>`:""}${S.edit&&S.edit.t==="ct"&&S.edit.id===k.id?` <span class="chip c-warn">Editando</span>`:""}</b><div class="row" style="gap:4px"><button class="btn sm" data-act="edit-ct" data-r="${k.id}">Editar</button><button class="btn ghost sm" data-act="del-ct" data-r="${k.id}">Eliminar</button></div></div>
+    <div class="num muted">${fmtD(k.inicio)} → ${k.fin?fmtD(k.fin):"indefinido"}${k.fin&&k.inicio?` · ${diff(toD(k.inicio),toD(k.fin))+1} días`:""}</div>
+    ${(k.cargo||k.salario)?`<div style="font-size:14px">${esc(k.cargo||"")}${k.salario?` · <span class="num">${money(k.salario)}</span>`:""}</div>`:""}${k.nota?`<div class="muted" style="font-size:14px">${esc(k.nota)}</div>`:""}
+    ${fileCtl(k.archivo,"ct",k.id)}</div></div>`).join("")}</div>`:`<div class="empty"><b>Sin contratos registrados</b>Agrega el contrato de ingreso con el formulario de abajo.</div>`}
+  ${(()=>{ const ed=S.edit&&S.edit.t==="ct"?(e.contratos||[]).find(x=>x.id===S.edit.id):null; if(ed) pre={inicio:ed.inicio||"",fin:ed.fin||"",tipo:ed.tipo||"Término fijo",salario:ed.salario??"",cargo:ed.cargo||"",nota:ed.nota||"",esOtrosi:!!ed.esOtrosi,archivo:ed.archivo}; pre.ed=!!ed; return ""; })()}
+  <form class="addbox stack" data-form="contrato" ${pre.ed?`style="outline:2px solid var(--accent)"`:""}><div class="spread"><h3>${pre.ed?(pre.esOtrosi?"Editar otrosí":"Editar contrato"):c?"Registrar renovación u otrosí":"Agregar contrato"}</h3></div><div class="fgrid">
+    <div class="field"><label for="c-tipo">Tipo</label><select id="c-tipo" name="tipo">${TIPOS_CONTRATO.map(t=>`<option ${t===pre.tipo?"selected":""}>${t}</option>`).join("")}</select></div>
+    <div class="field"><label for="c-ini" class="req">Inicio</label><input id="c-ini" name="inicio" type="date" required value="${pre.inicio||(pre.ed?"":e.fechaIngreso||"")}"></div>
+    <div class="field"><label for="c-fin">Terminación</label><input id="c-fin" name="fin" type="date" value="${pre.fin}"></div>
+    <div class="field"><label for="c-car">Cargo</label><input id="c-car" name="cargo" list="dl-cargos" value="${esc(pre.cargo)}"></div>
+    <div class="field"><label for="c-sal">Salario</label><input id="c-sal" class="mono" name="salario" type="number" min="0" value="${esc(pre.salario)}"></div>
+    <div class="field"><label for="c-file">${pre.ed&&pre.archivo?"Reemplazar documento firmado":"Documento firmado"}</label><input id="c-file" name="file" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" ${S.assets?"":"disabled"}>${pre.ed&&pre.archivo?`<span class="hint">Déjalo vacío para conservar ${esc(pre.archivo.nombre)}</span>`:""}</div>
+    <div class="field wide"><label for="c-nota">Nota</label><input id="c-nota" name="nota" value="${esc(pre.nota||"")}" placeholder="Ej.: otrosí por cambio de turno"></div>
+    <label class="row" style="font-size:14px"><input type="checkbox" name="esOtrosi" id="c-otro" ${pre.esOtrosi?"checked":""}> Es un otrosí (modifica el contrato vigente, no lo reemplaza)</label>
+  </div><div class="formfoot" style="border:0;padding:0">${pre.ed?`<button type="button" class="btn" data-act="edit-cancel">Cancelar edición</button><button class="btn pri" type="submit">Guardar cambios</button>`:`<button class="btn pri" type="submit">Guardar contrato</button>`}</div>${pre.ed?"":`<span class="hint muted" style="font-size:13px">Las fechas de la renovación se proponen con la misma duración del contrato anterior. Revísalas antes de guardar.</span>`}</form></div>`; }
+
+function tDocumentos(e){ const docs=e.documentos||[]; const byCat={}; docs.forEach(d=>(byCat[d.categoria]=byCat[d.categoria]||[]).push(d)); const otros=docs.filter(d=>!DOCS_REQ.includes(d.categoria));
+  const fila=(cat,d)=>`<div class="docrow"><span class="tick ${d?"y":"n"}">${d?"✓":"!"}</span><div style="min-width:0"><b>${esc(cat)}</b>${d?`<div class="muted num" style="font-size:13px">${d.fecha?fmtD(d.fecha):""}${d.vence?` · vence ${fmtD(d.vence)}`:""}${d.nombre&&d.nombre!==cat?` · ${esc(d.nombre)}`:""}</div>`:""}</div>
+    <div class="row">${d?`${d.archivo?`<button class="btn sm" data-act="file-ver" data-s="doc" data-r="${d.id}">Ver</button>`:`<span class="chip c-mute">Sin archivo</span>`}<button class="btn ghost sm" data-act="del-doc" data-r="${d.id}">Quitar</button>`:`<span class="chip c-warn">Falta</span>`}</div></div>`;
+  const ok=DOCS_REQ.filter(c=>byCat[c]).length;
+  return `<div class="stack"><div class="spread"><h3>Expediente · ${ok} de ${DOCS_REQ.length} documentos básicos</h3></div>
+  <div class="doclist">${DOCS_REQ.map(c=>fila(c,(byCat[c]||[]).slice(-1)[0])).join("")}${otros.map(d=>fila(d.categoria,d)).join("")}</div>
+  <form class="addbox stack" data-form="documento"><h3>Agregar documento</h3><div class="fgrid">
+    <div class="field"><label for="d-cat" class="req">Tipo de documento</label><input id="d-cat" name="categoria" list="dl-docs" required placeholder="Elige o escribe"><datalist id="dl-docs">${DOCS_REQ.map(c=>`<option>${c}</option>`).join("")}<option>Otrosí</option><option>Certificado laboral</option><option>Acta de entrega de EPP</option><option>Evaluación de desempeño</option></datalist></div>
+    <div class="field"><label for="d-fecha">Fecha del documento</label><input id="d-fecha" name="fecha" type="date" value="${iso(today())}"></div>
+    <div class="field"><label for="d-vence">Vence</label><input id="d-vence" name="vence" type="date"><span class="hint">Para certificados con vigencia (manipulación de alimentos, alturas).</span></div>
+    <div class="field"><label for="d-nom">Descripción</label><input id="d-nom" name="nombre"></div>
+    <div class="field"><label for="d-file">Archivo</label><input id="d-file" name="file" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" ${S.assets?"":"disabled"}></div>
+  </div><div class="formfoot" style="border:0;padding:0"><button class="btn pri" type="submit">Agregar al expediente</button></div></form></div>`; }
+
+function tNovedades(e){ const v=vacaciones(e); const list=(e.novedades||[]).slice().sort((a,b)=>(b.desde||"").localeCompare(a.desde||""));
+  return `<div class="stack"><div class="tiles"><div class="tile" style="padding:0"><div class="k">Vacaciones causadas</div><div class="v" style="font-size:20px">${v.causados.toFixed(1)}</div><div class="s">15 días hábiles por año</div></div><div class="tile" style="padding:0"><div class="k">Disfrutadas</div><div class="v" style="font-size:20px">${v.tomados.toFixed(1)}</div></div><div class="tile" style="padding:0"><div class="k">Pagadas en dinero</div><div class="v" style="font-size:20px">${v.compensados.toFixed(1)}</div><div class="s">${v.pagado?money(v.pagado):"&nbsp;"}</div></div><div class="tile" style="padding:0"><div class="k">Saldo</div><div class="v" style="font-size:20px;color:${v.saldo>=30?"var(--warn)":"inherit"}">${v.saldo.toFixed(1)}</div></div></div>
+  ${list.length?`<div class="tablewrap"><table><thead><tr><th>Tipo</th><th>Desde</th><th>Hasta</th><th>Días</th><th>Detalle</th><th></th></tr></thead><tbody>${list.map(n=>`<tr ${S.edit&&S.edit.t==="nov"&&S.edit.id===n.id?`style="background:var(--warn-soft)"`:""}><td><b>${esc(n.tipo)}</b></td><td class="num">${fmtD(n.desde)}</td><td class="num">${n.hasta?fmtD(n.hasta):"—"}</td><td class="num">${n.tipo==="Vacaciones"&&Number(n.diasComp)?`${Number(n.dias)||0} disfrutados<br><span style="color:var(--accent)">${n.diasComp} en dinero</span>${n.valorComp?`<br><small class="muted">${money(n.valorComp)}</small>`:""}`:(n.dias||"—")}</td><td>${esc(n.nota||"")}${n.archivo?` <button class="btn sm" data-act="file-ver" data-s="nov" data-r="${n.id}">Soporte</button>`:""}</td><td><div class="row" style="gap:4px;flex-wrap:nowrap"><button class="btn sm" data-act="edit-nov" data-r="${n.id}">Editar</button><button class="btn ghost sm" data-act="del-nov" data-r="${n.id}">Quitar</button></div></td></tr>`).join("")}</tbody></table></div>`:`<div class="empty"><b>Sin novedades</b>Aquí quedan vacaciones, incapacidades, permisos, llamados de atención, capacitaciones, exámenes y entregas de dotación.</div>`}
+  ${novForm(e)}</div>`; }
+function novForm(e){ const ed=S.edit&&S.edit.t==="nov"?(e.novedades||[]).find(x=>x.id===S.edit.id):null; const n=ed||{tipo:"Vacaciones",desde:iso(today())}; const vac=n.tipo==="Vacaciones"; const h=vac?"":"hidden";
+  const val=x=>x===undefined||x===null?"":esc(x);
+  return `<form class="addbox stack" data-form="novedad" ${ed?`style="outline:2px solid var(--accent)"`:""}><h3>${ed?"Editar novedad":"Registrar novedad"}</h3><div class="fgrid">
+    <div class="field"><label for="v-tipo">Tipo</label><select id="v-tipo" name="tipo">${TIPOS_NOV.map(t=>`<option ${t===n.tipo?"selected":""}>${t}</option>`).join("")}</select></div>
+    <div class="field"><label for="v-desde" class="req">Desde</label><input id="v-desde" name="desde" type="date" required value="${val(n.desde)}"></div>
+    <div class="field"><label for="v-hasta">Hasta</label><input id="v-hasta" name="hasta" type="date" value="${val(n.hasta)}"></div>
+    <div class="field"><label for="v-dias">Días</label><input id="v-dias" class="mono" name="dias" type="number" min="0" step="0.5" value="${val(n.dias)}"><span class="hint">En vacaciones, días hábiles disfrutados.</span></div>
+    <div class="field only-vac" ${h}><label for="v-comp">Días pagados en dinero</label><input id="v-comp" class="mono" name="diasComp" type="number" min="0" step="0.5" value="${val(n.diasComp)}"><span class="hint">Hasta la mitad del periodo, con acuerdo escrito.</span></div>
+    <div class="field only-vac" ${h}><label for="v-valor">Valor pagado</label><input id="v-valor" class="mono" name="valorComp" type="number" min="0" value="${n.valorAuto?"":val(n.valorComp)}" placeholder="Se calcula si lo dejas vacío"><span class="hint" id="v-valor-hint">Salario ÷ 30 × días pagados.</span></div>
+    <div class="field"><label for="v-file">${ed&&ed.archivo?"Reemplazar soporte":"Soporte"}</label><input id="v-file" name="file" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" ${S.assets?"":"disabled"}>${ed&&ed.archivo?`<span class="hint">Déjalo vacío para conservar ${esc(ed.archivo.nombre)}</span>`:""}</div>
+    <div class="field wide"><label for="v-nota">Detalle</label><input id="v-nota" name="nota" value="${val(n.nota)}" placeholder="Ej.: periodo 2025-2026, incapacidad EPS 3 días"></div>
+    <span class="hint muted only-vac" ${h} style="font-size:13px;grid-column:1/-1">Para vacaciones adjunta como soporte la solicitud del trabajador y el acuerdo de compensación firmado.</span>
+  </div><div class="formfoot" style="border:0;padding:0">${ed?`<button type="button" class="btn" data-act="edit-cancel">Cancelar edición</button><button class="btn pri" type="submit">Guardar cambios</button>`:`<button class="btn pri" type="submit">Registrar</button>`}</div></form>`; }
+
+function tRetiro(e){ const r=e.retiro||{}; const ret=e.estado==="retirado";
+  return `<form class="stack" data-form="retiro">${ret?`<div class="banner c-warn"><span>Retirado desde el <b>${fmtD(r.fecha)}</b> · ${esc(r.motivo||"")}</span><button type="button" class="btn sm" data-act="reintegrar">Reintegrar</button></div>`:`<p class="muted" style="margin:0">Registra la salida cuando se confirme. El empleado pasa a Retirados y sale de las alertas, pero su expediente se conserva.</p>`}
+  <div class="fgrid"><div class="field"><label for="r-fecha" class="req">Fecha de retiro</label><input id="r-fecha" name="fecha" type="date" required value="${esc(r.fecha||"")}"></div>
+  <div class="field"><label for="r-mot" class="req">Motivo</label><select id="r-mot" name="motivo">${MOTIVOS.map(m=>`<option ${m===r.motivo?"selected":""}>${m}</option>`).join("")}</select></div></div>
+  <fieldset><legend>Lista de salida</legend><div class="fgrid">${CHECK_RETIRO.map(([k,l])=>`<label class="row" style="font-size:14px"><input type="checkbox" id="r-${k}" name="ck_${k}" ${r[k]?"checked":""}> ${l}</label>`).join("")}</div></fieldset>
+  <div class="field"><label for="r-nota">Observaciones</label><textarea id="r-nota" name="nota" rows="3">${esc(r.nota||"")}</textarea></div>
+  <div class="formfoot"><button type="button" class="btn danger" data-act="del-emp">Eliminar expediente</button><button class="btn pri" type="submit">${ret?"Guardar cambios":"Registrar retiro"}</button></div></form>`; }
+
+/* --- cargos, manuales y KPI --- */
+function listaTxt(t){ const ls=String(t||"").split("\n").map(s=>s.trim().replace(/^[-•*·]\s*|^\d+[.)]\s*/,"")).filter(Boolean);
+  return ls.length?`<ol style="margin:6px 0 0;padding-left:22px;display:grid;gap:4px">${ls.map(l=>`<li>${esc(l)}</li>`).join("")}</ol>`:`<span class="muted">Sin registrar</span>`; }
+const nFunciones = c => String(c.funciones||"").split("\n").map(s=>s.trim()).filter(Boolean).length;
+const metaTxt = k => `${k.sentido==="menor"?"≤":"≥"} ${k.meta===""?"—":Number(k.meta).toLocaleString("es-CO")} ${k.unidad||""}`.trim();
+const valTxt = (k,v) => `${Number(v).toLocaleString("es-CO")} ${k.unidad||""}`.trim();
+const persNombre = id => { if(!id) return "Todo el cargo"; const e=S.emps.find(x=>x.id===id); return e?nombre(e):"Persona retirada"; };
+function resultadoCelda(c,k,per,empId){ let ms=medicionesDe(c,k.id,per); if(empId!==undefined) ms=ms.filter(m=>!m.empleadoId||m.empleadoId===empId);
+  if(!ms.length) return tocaMedir(k,per)?`<span class="chip c-warn">Sin medir</span>`:`<span class="muted" style="font-size:13px">No toca este mes</span>`;
+  return `<div style="display:grid;gap:4px">${ms.map(m=>{ const p=cumpl(k,m.valor); return `<div class="row" style="gap:6px"><span class="num">${esc(valTxt(k,m.valor))}</span><span class="chip ${semaforo(p)}">${pctTxt(p)}</span>${empId===undefined&&m.empleadoId?`<small class="muted">${esc(persNombre(m.empleadoId))}</small>`:""}</div>`; }).join("")}</div>`; }
+
+function tFunciones(e){ const c=cargoDe(e);
+  if(!c) return `<div class="empty"><b>El cargo “${esc(e.cargo||"sin cargo")}” no tiene manual de funciones</b>Se crea una sola vez y queda para todas las personas con ese cargo.<div class="row" style="justify-content:center;margin-top:12px"><button class="btn pri" data-act="nuevo-cargo" data-n="${esc(e.cargo||"")}">Crear manual del cargo</button></div></div>`;
+  const kp=c.kpis||[];
+  return `<div class="stack"><div class="spread"><div><h2>${esc(c.nombre)}</h2><span class="muted">${[c.reportaA?`Reporta a ${esc(c.reportaA)}`:"",c.version?`Versión ${esc(c.version)}`:"",c.fechaActualizacion?`actualizado ${fmtD(c.fechaActualizacion)}`:""].filter(Boolean).join(" · ")}</span></div><button class="btn sm" data-act="ver-cargo" data-id="${c.id}">Abrir cargo</button></div>
+  ${c.manual?fileCtl(c.manual,"manual",c.id,"Manual cargado","Subir manual"):`<div class="file"><span class="chip c-warn">Manual en PDF sin cargar</span></div>`}
+  ${c.objetivo?`<div><h3>Objetivo del cargo</h3><p style="margin:6px 0 0">${esc(c.objetivo)}</p></div>`:""}
+  <div><h3>Funciones</h3>${listaTxt(c.funciones)}</div>
+  <div class="stack" style="gap:8px"><div class="spread"><h3>Indicadores · ${esc(mesTxt(S.kpiPer))}</h3><input type="month" id="kpi-per" value="${S.kpiPer}"></div>
+  ${kp.length?`<div class="tablewrap"><table><thead><tr><th>Indicador</th><th>Meta</th><th>Frecuencia</th><th>Resultado</th></tr></thead><tbody>${kp.map(k=>`<tr><td><b>${esc(k.nombre)}</b>${k.formula?`<br><small class="muted">${esc(k.formula)}</small>`:""}</td><td class="num">${esc(metaTxt(k))}</td><td>${esc(k.frecuencia||"")}</td><td>${resultadoCelda(c,k,S.kpiPer,e.id)}</td></tr>`).join("")}</tbody></table></div>`:`<span class="muted">El cargo aún no tiene indicadores. Agrégalos en Cargos y KPI.</span>`}</div></div>`; }
+
+function vCargos(){ const act=activos(); const sinFicha=[...new Set(act.map(e=>e.cargo).filter(Boolean))].filter(n=>!S.cargos.some(c=>norm(c.nombre)===norm(n)));
+  const list=S.cargos.slice().sort((a,b)=>(a.area||"").localeCompare(b.area||"")||(a.nombre||"").localeCompare(b.nombre||"")); const pend=kpiPendientes(S.kpiPer);
+  const fila=c=>{ const n=personasCargo(c).length, u=ultimoPeriodo(c); return `<tr class="click" data-act="ver-cargo" data-id="${c.id}"><td><b>${esc(c.nombre)}</b>${c.reportaA?`<br><small class="muted">Reporta a ${esc(c.reportaA)}</small>`:""}</td><td class="hide-sm">${esc(c.area||"—")}</td><td class="num">${n}</td>
+    <td>${c.manual?`<span class="chip c-ok">PDF</span> `:""}${nFunciones(c)?`<span class="chip c-info">${nFunciones(c)} funciones</span>`:(!c.manual?`<span class="chip c-warn">Sin manual</span>`:"")}</td><td class="num">${(c.kpis||[]).length}</td><td class="hide-sm num">${u?esc(mesTxt(u)):"—"}</td></tr>`; };
+  return `<div class="stack"><div class="spread"><h1>Cargos y KPI</h1><button class="btn pri" data-act="nuevo-cargo" data-n="">+ Nuevo cargo</button></div>
+  <div class="banner ${pend?"c-warn":"c-ok"}"><span>${pend?`<b>${pend} indicadores</b> sin resultado registrado para ${esc(mesTxt(S.kpiPer))}.`:`Todos los indicadores de ${esc(mesTxt(S.kpiPer))} tienen resultado.`}</span><label class="row" style="gap:6px;font-size:14px">Periodo <input type="month" id="kpi-per" value="${S.kpiPer}"></label></div>
+  ${sinFicha.length?`<div class="card pad stack"><h3>Cargos con personal y sin manual de funciones</h3><div class="row">${sinFicha.map(n=>`<button class="btn sm" data-act="nuevo-cargo" data-n="${esc(n)}">+ ${esc(n)}</button>`).join("")}</div></div>`:""}
+  <div class="card tablewrap">${list.length?`<table><thead><tr><th>Cargo</th><th class="hide-sm">Área</th><th>Personas</th><th>Manual</th><th>KPI</th><th class="hide-sm">Última medición</th></tr></thead><tbody>${list.map(fila).join("")}</tbody></table>`:`<div class="empty"><b>Aún no hay cargos documentados</b>Crea el manual de funciones de cada cargo: objetivo, funciones, requisitos, el PDF firmado por Gerencia y sus indicadores.</div>`}</div></div>`; }
+
+function vCargo(){ const isNew=S.cargoSel==="__nuevo";
+  const c=isNew?{nombre:S.cargoNuevo,area:(S.emps.find(e=>norm(e.cargo)===norm(S.cargoNuevo))||{}).area||"",kpis:[],mediciones:[]}:S.cargos.find(x=>x.id===S.cargoSel);
+  if(!c) return `<div class="card empty"><b>Este cargo ya no existe</b><button class="btn" data-act="nav" data-v="cargos">Volver a cargos</button></div>`;
+  const per=personasCargo(c), kp=c.kpis||[]; const ta=(k,l,rows,hint)=>`<div class="field wide"><label for="cg-${k}">${l}</label><textarea id="cg-${k}" name="${k}" rows="${rows}">${esc(c[k]||"")}</textarea>${hint?`<span class="hint">${hint}</span>`:""}</div>`;
+  const hist=(c.mediciones||[]).slice().sort((a,b)=>b.periodo.localeCompare(a.periodo)).slice(0,36);
+  return `<div class="stack"><div class="row"><button class="btn ghost" data-act="nav" data-v="cargos">← Cargos y KPI</button></div>
+  <div class="spread"><div><h1>${isNew?(c.nombre?`Manual de ${esc(c.nombre)}`:"Nuevo cargo"):esc(c.nombre)}</h1>${per.length?`<div class="row" style="margin-top:6px">${per.map(e=>`<button class="chip c-info" style="border:0;cursor:pointer" data-act="ver" data-id="${e.id}">${esc(nombre(e))}</button>`).join("")}</div>`:`<span class="muted">Nadie activo tiene este cargo.</span>`}</div>
+    ${isNew?"":`<button class="btn sm" data-act="cargo-xlsx">Descargar en Excel</button>`}</div>
+  <form class="card pad stack" data-form="cargo"><h2>Manual de funciones</h2><div class="fgrid">
+    <div class="field"><label for="cg-nombre" class="req">Nombre del cargo</label><input id="cg-nombre" name="nombre" required list="dl-cargos" value="${esc(c.nombre||"")}"></div>
+    <div class="field"><label for="cg-area" class="req">Área</label><input id="cg-area" name="area" required list="dl-areas" value="${esc(c.area||"")}"></div>
+    <div class="field"><label for="cg-rep">Reporta a</label><input id="cg-rep" name="reportaA" list="dl-cargos" value="${esc(c.reportaA||"")}"></div>
+    <div class="field"><label for="cg-ver">Versión</label><input id="cg-ver" name="version" class="mono" value="${esc(c.version||"")}" placeholder="01"></div>
+    <div class="field"><label for="cg-fec">Fecha de actualización</label><input id="cg-fec" name="fechaActualizacion" type="date" value="${esc(c.fechaActualizacion||"")}"></div>
+    <div class="field"><label for="cg-file">Manual en PDF</label>${isNew?`<input id="cg-file" name="manualFile" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" ${S.assets?"":"disabled"}>`:fileCtl(c.manual,"manual",c.id,"Cargado","Subir PDF")}</div>
+    ${ta("objetivo","Objetivo del cargo",2)}${ta("funciones","Funciones",7,"Una función por línea. Puedes pegarlas desde Word.")}${ta("requisitos","Requisitos de formación y experiencia",3)}${ta("competencias","Competencias y responsabilidades",3)}
+  </div><div class="formfoot">${isNew?"":`<button type="button" class="btn danger" data-act="del-cargo">Eliminar cargo</button>`}<button class="btn pri" type="submit">${isNew?"Crear cargo":"Guardar manual"}</button></div></form>
+  ${isNew?"":`<div class="card pad stack"><div class="spread"><h2>Indicadores (KPI)</h2><label class="row" style="gap:6px;font-size:14px">Periodo <input type="month" id="kpi-per" value="${S.kpiPer}"></label></div>
+    ${kp.length?`<div class="tablewrap"><table><thead><tr><th>Indicador</th><th>Meta</th><th>Frecuencia</th><th>${esc(mesTxt(S.kpiPer))}</th><th></th></tr></thead><tbody>${kp.map(k=>`<tr><td><b>${esc(k.nombre)}</b>${k.formula?`<br><small class="muted">${esc(k.formula)}</small>`:""}${k.fuente?`<br><small class="muted">Fuente: ${esc(k.fuente)}</small>`:""}</td><td class="num">${esc(metaTxt(k))}</td><td>${esc(k.frecuencia||"")}</td><td>${resultadoCelda(c,k,S.kpiPer)}</td><td><button class="btn ghost sm" data-act="del-kpi" data-r="${k.id}">Quitar</button></td></tr>`).join("")}</tbody></table></div>`:`<div class="empty"><b>Sin indicadores</b>Define qué se mide en este cargo, la meta y cada cuánto.</div>`}
+    <form class="addbox stack" data-form="kpi"><h3>Agregar indicador</h3><div class="fgrid">
+      <div class="field"><label for="k-nom" class="req">Indicador</label><input id="k-nom" name="nombre" required placeholder="Ej.: Cumplimiento del plan de producción"></div>
+      <div class="field"><label for="k-for">Fórmula</label><input id="k-for" name="formula" placeholder="Kg producidos ÷ kg programados × 100"></div>
+      <div class="field"><label for="k-fue">Fuente del dato</label><input id="k-fue" name="fuente" placeholder="Ej.: Orden de producción, ERP"></div>
+      <div class="field"><label for="k-meta" class="req">Meta</label><input id="k-meta" class="mono" name="meta" type="number" step="any" required></div>
+      <div class="field"><label for="k-uni">Unidad</label><input id="k-uni" name="unidad" list="dl-unidades" placeholder="%"><datalist id="dl-unidades"><option>%</option><option>días</option><option>horas</option><option>kg</option><option>unidades</option><option>pedidos</option><option>$</option><option>casos</option></datalist></div>
+      <div class="field"><label for="k-sen">Se cumple cuando el resultado es</label><select id="k-sen" name="sentido"><option value="mayor">Igual o mayor a la meta</option><option value="menor">Igual o menor a la meta</option></select></div>
+      <div class="field"><label for="k-frec">Frecuencia</label><select id="k-frec" name="frecuencia">${FRECUENCIAS.map(x=>`<option>${x}</option>`).join("")}</select></div>
+    </div><div class="formfoot" style="border:0;padding:0"><button class="btn pri" type="submit">Agregar indicador</button></div></form></div>
+  ${kp.length?`<div class="card pad stack"><h2>Registrar resultados</h2>
+    <form class="addbox stack" data-form="medicion"><div class="fgrid">
+      <div class="field"><label for="m-kpi">Indicador</label><select id="m-kpi" name="kpiId">${kp.map(k=>`<option value="${k.id}">${esc(k.nombre)} (${esc(metaTxt(k))})</option>`).join("")}</select></div>
+      <div class="field"><label for="m-emp">Medido a</label><select id="m-emp" name="empleadoId"><option value="">Todo el cargo</option>${per.map(e=>`<option value="${e.id}">${esc(nombre(e))}</option>`).join("")}</select></div>
+      <div class="field"><label for="m-per" class="req">Periodo</label><input id="m-per" name="periodo" type="month" required value="${S.kpiPer}"></div>
+      <div class="field"><label for="m-val" class="req">Resultado</label><input id="m-val" class="mono" name="valor" type="number" step="any" required></div>
+      <div class="field wide"><label for="m-nota">Observación</label><input id="m-nota" name="nota" placeholder="Ej.: paro de 2 días por mantenimiento del autoclave"></div>
+    </div><div class="formfoot" style="border:0;padding:0"><button class="btn pri" type="submit">Guardar resultado</button></div><span class="muted" style="font-size:13px">Si ya había un resultado para ese indicador, persona y periodo, se reemplaza.</span></form>
+    ${hist.length?`<div class="tablewrap"><table><thead><tr><th>Periodo</th><th>Indicador</th><th>Medido a</th><th>Resultado</th><th>Cumplimiento</th><th>Observación</th><th></th></tr></thead><tbody>${hist.map(m=>{ const k=kp.find(x=>x.id===m.kpiId)||{nombre:"Indicador eliminado"}; const p=cumpl(k,m.valor); return `<tr><td class="num">${esc(mesTxt(m.periodo))}</td><td>${esc(k.nombre)}</td><td>${esc(persNombre(m.empleadoId))}</td><td class="num">${esc(valTxt(k,m.valor))}</td><td><span class="chip ${semaforo(p)}">${pctTxt(p)}</span></td><td>${esc(m.nota||"")}</td><td><button class="btn ghost sm" data-act="del-med" data-r="${m.id}">Quitar</button></td></tr>`; }).join("")}</tbody></table></div>`:""}</div>`:""}`}
+  </div>`; }
+
+/* --- informes --- */
+const rowPlanta = e => { const c=vigente(e)||{}; return {"Nombres":e.nombres||"","Apellidos":e.apellidos||"","Tipo doc.":e.tipoDoc||"","Documento":e.documento||"","Cargo":e.cargo||"","Área":e.area||"","Jefe inmediato":e.jefe||"","Fecha ingreso":dmy(e.fechaIngreso),"Antigüedad":antig(e),"Tipo contrato":c.tipo||"","Fin contrato":dmy(c.fin),"Renovaciones":c.tipo==="Término fijo"?renovaciones(e):"","Salario básico":Number(e.salario)||"","Aux. transporte":aplicaAux(e)?S.config.auxTransporte:0,"EPS":e.eps||"","AFP":e.afp||"","Cesantías":e.cesantias||"","ARL":e.arl||"","Riesgo ARL":e.riesgoArl||"","Caja compensación":e.ccf||"","Celular":e.telefono||"","Correo":e.email||"","Municipio":e.ciudad||"","Fecha nacimiento":dmy(e.fechaNacimiento),"Contacto emergencia":[e.emergNombre,e.emergParentesco,e.emergTel].filter(Boolean).join(" · "),"RH":e.rh||"","Talla camisa":e.tallaCamisa||"","Talla pantalón":e.tallaPantalon||"","Talla calzado":e.tallaCalzado||""}; };
+const INFORMES = [
+ {id:"planta",nombre:"Planta de personal",desc:"Activos con cargo, contrato, salario y seguridad social",build:()=>({rows:activos().sort((a,b)=>(a.area||"").localeCompare(b.area||"")||nombre(a).localeCompare(nombre(b))).map(rowPlanta)})},
+ {id:"vencimientos",nombre:"Vencimientos y fechas clave",desc:"Contratos, periodos de prueba y documentos por vencer",params:["dias"],build:p=>{ const t=today(), lim=addDays(t,Number(p.dias)||90), rows=[];
+   for(const e of activos()){ const c=vigente(e); if(c&&c.fin&&toD(c.fin)<=lim){ rows.push({"Fecha":c.fin,"Evento":`Fin de contrato (${c.tipo})`,"Empleado":nombre(e),"Cargo":e.cargo||"","Área":e.area||"","Preaviso hasta":c.tipo==="Término fijo"?dmy(iso(addDays(toD(c.fin),-30))):"","Renovaciones":c.tipo==="Término fijo"?renovaciones(e):""}); }
+     const fp=finPrueba(e); if(fp&&fp>=t&&fp<=lim) rows.push({"Fecha":iso(fp),"Evento":"Fin del periodo de prueba","Empleado":nombre(e),"Cargo":e.cargo||"","Área":e.area||"","Preaviso hasta":"","Renovaciones":""});
+     for(const d of (e.documentos||[])) if(d.vence&&toD(d.vence)<=lim) rows.push({"Fecha":d.vence,"Evento":`Vence ${d.categoria}`,"Empleado":nombre(e),"Cargo":e.cargo||"","Área":e.area||"","Preaviso hasta":"","Renovaciones":""}); }
+   rows.sort((a,b)=>a.Fecha.localeCompare(b.Fecha)); rows.forEach(r=>r.Fecha=dmy(r.Fecha)); return {rows}; }},
+ {id:"novedades",nombre:"Novedades por periodo",desc:"Vacaciones, incapacidades, permisos y demás en un rango",params:["desde","hasta","tipo"],build:p=>{ const rows=[];
+   for(const e of S.emps) for(const n of (e.novedades||[])){ if(p.tipo&&n.tipo!==p.tipo) continue; if(p.desde&&(n.hasta||n.desde)<p.desde) continue; if(p.hasta&&n.desde>p.hasta) continue;
+     rows.push({"Desde":n.desde,"Hasta":dmy(n.hasta),"Tipo":n.tipo,"Empleado":nombre(e),"Documento":e.documento||"","Área":e.area||"","Días":Number(n.dias)||"","Días pagados en dinero":Number(n.diasComp)||"","Valor pagado":Number(n.valorComp)||"","Detalle":n.nota||"","Soporte":n.archivo?"Sí":"No"}); }
+   rows.sort((a,b)=>a.Desde.localeCompare(b.Desde)); rows.forEach(r=>r.Desde=dmy(r.Desde)); return {rows}; }},
+ {id:"vacaciones",nombre:"Saldo de vacaciones",desc:"Días causados, disfrutados, pagados en dinero y pendientes",build:()=>({rows:activos().map(e=>{ const v=vacaciones(e); return {"Empleado":nombre(e),"Documento":e.documento||"","Área":e.area||"","Fecha ingreso":dmy(e.fechaIngreso),"Causados":+v.causados.toFixed(2),"Disfrutados":+v.tomados.toFixed(2),"Pagados en dinero":+v.compensados.toFixed(2),"Valor pagado":v.pagado||"","Saldo":+v.saldo.toFixed(2),"Periodos pendientes":+(v.saldo/15).toFixed(2)}; }).sort((a,b)=>b.Saldo-a.Saldo)})},
+ {id:"retiros",nombre:"Retiros y rotación",desc:"Salidas del año, motivos e índice de rotación",params:["anio"],build:p=>{ const y=Number(p.anio)||today().getFullYear(); const ini=new Date(y,0,1,12), fin=new Date(y,11,31,12)<today()?new Date(y,11,31,12):today();
+   const activosEn=d=>S.emps.filter(e=>{ const i=toD(e.fechaIngreso); if(!i||i>d) return false; const r=e.estado==="retirado"&&e.retiro?toD(e.retiro.fecha):null; return !r||r>d; }).length;
+   const ret=S.emps.filter(e=>e.estado==="retirado"&&e.retiro&&toD(e.retiro.fecha)&&toD(e.retiro.fecha).getFullYear()===y);
+   const ingresos=S.emps.filter(e=>toD(e.fechaIngreso)&&toD(e.fechaIngreso).getFullYear()===y).length;
+   const prom=(activosEn(ini)+activosEn(fin))/2; const rot=prom?ret.length/prom*100:0;
+   return {resumen:[["Año",y],["Ingresos",ingresos],["Retiros",ret.length],["Promedio de personal",prom.toFixed(1)],["Índice de rotación",rot.toFixed(1)+" %"]],
+     rows:ret.map(e=>{ const r=e.retiro; return {"Empleado":nombre(e),"Documento":e.documento||"","Cargo":e.cargo||"","Área":e.area||"","Ingreso":dmy(e.fechaIngreso),"Retiro":dmy(r.fecha),"Antigüedad":antig(e),"Motivo":r.motivo||"","Paz y salvo":r.paz?"Sí":"No","Liquidación firmada":r.liq?"Sí":"No","Examen de egreso":r.examen?"Sí":"No","Certificado laboral":r.cert?"Sí":"No"}; })}; }},
+ {id:"documentos",nombre:"Documentos faltantes",desc:"Qué le falta al expediente de cada persona",build:()=>({rows:activos().map(e=>{ const cats=new Set((e.documentos||[]).map(d=>d.categoria)); const falt=DOCS_REQ.filter(c=>!cats.has(c)); const sinFirma=ordenC(e).filter(c=>!c.archivo).length;
+   return {"Empleado":nombre(e),"Área":e.area||"","Completos":`${DOCS_REQ.length-falt.length}/${DOCS_REQ.length}`,"Contratos sin firmar cargado":sinFirma,"Faltan":falt.join(", ")}; }).filter(r=>r.Faltan||r["Contratos sin firmar cargado"])})},
+ {id:"cumpleanos",nombre:"Cumpleaños y aniversarios",desc:"Para celebrar en el mes",params:["mes"],build:p=>{ const m=Number(p.mes), y=today().getFullYear(), rows=[];
+   for(const e of activos()){ const b=toD(e.fechaNacimiento); if(b&&b.getMonth()===m) rows.push({"Día":b.getDate(),"Evento":"Cumpleaños","Empleado":nombre(e),"Área":e.area||"","Detalle":`${y-b.getFullYear()} años`});
+     const i=toD(e.fechaIngreso); if(i&&i.getMonth()===m&&i.getFullYear()<y) rows.push({"Día":i.getDate(),"Evento":"Aniversario en ASPM","Empleado":nombre(e),"Área":e.area||"","Detalle":`${y-i.getFullYear()} año${y-i.getFullYear()>1?"s":""}`}); }
+   return {rows:rows.sort((a,b)=>a.Día-b.Día)}; }},
+ {id:"tallas",nombre:"Tallas de dotación",desc:"Camisa, pantalón y calzado de quienes reciben dotación",build:()=>({rows:activos().sort((a,b)=>(a.area||"").localeCompare(b.area||"")||nombre(a).localeCompare(nombre(b))).map(e=>({"Empleado":nombre(e),"Documento":e.documento||"","Área":e.area||"","Cargo":e.cargo||"","Recibe dotación":aplicaAux(e)?"Sí":"No","Camisa":e.tallaCamisa||"","Pantalón":e.tallaPantalon||"","Calzado":e.tallaCalzado||""}))})},
+ {id:"manuales",nombre:"Manuales de funciones",desc:"Cargos, quién los ocupa y estado de su manual",build:()=>({rows:S.cargos.slice().sort((a,b)=>(a.area||"").localeCompare(b.area||"")||(a.nombre||"").localeCompare(b.nombre||"")).map(c=>({"Cargo":c.nombre||"","Área":c.area||"","Reporta a":c.reportaA||"","Versión":c.version||"","Actualizado":dmy(c.fechaActualizacion),"Personas":personasCargo(c).map(nombre).join(", "),"Manual PDF":c.manual?"Sí":"No","N.º funciones":nFunciones(c),"N.º KPI":(c.kpis||[]).length,"Objetivo":c.objetivo||"","Funciones":String(c.funciones||"").split("\n").map(s=>s.trim()).filter(Boolean).join(" | "),"Requisitos":c.requisitos||""}))})},
+ {id:"kpi",nombre:"Resultados de KPI",desc:"Resultados y cumplimiento por cargo y persona",params:["desde","hasta"],build:p=>{ const rows=[], d=(p.desde||"").slice(0,7), h=(p.hasta||"").slice(0,7);
+   for(const c of S.cargos) for(const m of (c.mediciones||[])){ if(d&&m.periodo<d) continue; if(h&&m.periodo>h) continue; const k=(c.kpis||[]).find(x=>x.id===m.kpiId); if(!k) continue; const pc=cumpl(k,m.valor);
+     rows.push({"Periodo":m.periodo,"Cargo":c.nombre,"Área":c.area||"","Indicador":k.nombre,"Medido a":persNombre(m.empleadoId),"Meta":metaTxt(k),"Resultado":Number(m.valor),"Unidad":k.unidad||"","Cumplimiento %":pc==null?"":Math.round(Math.min(pc,150)),"Estado":pc==null?"":pc>=100?"Cumple":pc>=80?"En riesgo":"No cumple","Observación":m.nota||""}); }
+   rows.sort((a,b)=>b.Periodo.localeCompare(a.Periodo)||a.Cargo.localeCompare(b.Cargo)); rows.forEach(r=>r.Periodo=mesTxt(r.Periodo)); return {rows}; }},
+ {id:"alertas",nombre:"Alertas abiertas",desc:"Todo lo pendiente, ordenado por urgencia",build:()=>({rows:todasAlertas().map(a=>({"Urgencia":{crit:"Urgente",warn:"Atención",info:"Pendiente"}[a.n],"Alerta":a.tipo,"Empleado":nombre(a.e),"Área":a.e.area||"","Fecha":dmy(a.fecha),"Detalle":a.txt}))})},
+];
+function paramCtl(p){ const rp=S.rp;
+  if(p==="dias") return `<div class="field"><label for="p-dias">Próximos días</label><select id="p-dias" data-p="dias">${[30,60,90,180,365].map(n=>`<option ${n==rp.dias?"selected":""}>${n}</option>`).join("")}</select></div>`;
+  if(p==="desde") return `<div class="field"><label for="p-desde">Desde</label><input id="p-desde" type="date" data-p="desde" value="${rp.desde}"></div>`;
+  if(p==="hasta") return `<div class="field"><label for="p-hasta">Hasta</label><input id="p-hasta" type="date" data-p="hasta" value="${rp.hasta}"></div>`;
+  if(p==="tipo") return `<div class="field"><label for="p-tipo">Tipo</label><select id="p-tipo" data-p="tipo"><option value="">Todas</option>${TIPOS_NOV.map(t=>`<option ${t===rp.tipo?"selected":""}>${t}</option>`).join("")}</select></div>`;
+  if(p==="anio"){ const y=today().getFullYear(); return `<div class="field"><label for="p-anio">Año</label><select id="p-anio" data-p="anio">${[y,y-1,y-2,y-3].map(n=>`<option ${n==rp.anio?"selected":""}>${n}</option>`).join("")}</select></div>`; }
+  if(p==="mes") return `<div class="field"><label for="p-mes">Mes</label><select id="p-mes" data-p="mes">${MESES.map((m,i)=>`<option value="${i}" ${i==rp.mes?"selected":""}>${m}</option>`).join("")}</select></div>`; return ""; }
+function vInformes(){ const R=INFORMES.find(r=>r.id===S.rep)||INFORMES[0]; const out=R.build(S.rp); const rows=out.rows; const cols=rows.length?Object.keys(rows[0]):[];
+  return `<div class="stack"><div class="spread"><h1>Informes</h1><button class="btn" data-act="rep-all">Descargar informe completo</button></div>
+  <div class="reps"><div class="card replist">${INFORMES.map(r=>`<button data-act="rep" data-r="${r.id}" aria-current="${r.id===R.id}"><b>${r.nombre}</b><small>${r.desc}</small></button>`).join("")}</div>
+  <div class="card pad stack" style="min-width:0"><div class="spread"><div><h2>${R.nombre}</h2><span class="muted">${rows.length} registro${rows.length===1?"":"s"} · generado ${fmtD(today())}</span></div><button class="btn pri" data-act="rep-xlsx">Descargar Excel</button></div>
+    ${(R.params||[]).length?`<div class="fgrid">${R.params.map(paramCtl).join("")}</div>`:""}
+    ${out.resumen?`<dl class="kv" style="max-width:380px">${out.resumen.map(([k,v])=>`<dt>${esc(k)}</dt><dd class="num">${esc(v)}</dd>`).join("")}</dl>`:""}
+    ${rows.length?`<div class="tablewrap"><table><thead><tr>${cols.map(c=>`<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>${rows.slice(0,100).map(r=>`<tr>${cols.map(c=>`<td class="${typeof r[c]==="number"?"num":""}">${esc(typeof r[c]==="number"&&/Salario|Aux|Valor/.test(c)?money(r[c]):r[c])}</td>`).join("")}</tr>`).join("")}</tbody></table></div>${rows.length>100?`<span class="muted">Vista previa de 100 filas. El Excel trae todas.</span>`:""}`:`<div class="empty"><b>Sin registros</b>No hay datos para este informe con los filtros elegidos.</div>`}
+  </div></div></div>`; }
+function hoja(titulo,rows,resumen,plano){ const XLSX=window.XLSX; if(plano){ const w=XLSX.utils.json_to_sheet(rows); w["!cols"]=Object.keys(rows[0]||{}).map(c=>({wch:Math.max(14,c.length+2)})); return w; } const head=[[S.config.empresa],[titulo],["Generado: "+dmy(iso(today()))],[]]; if(resumen){ resumen.forEach(r=>head.push(r)); head.push([]); }
+  const ws=XLSX.utils.aoa_to_sheet(head); const data=rows.length?rows:[{"Resultado":"Sin registros"}]; XLSX.utils.sheet_add_json(ws,data,{origin:"A"+(head.length+1)});
+  const cols=Object.keys(data[0]); ws["!cols"]=cols.map(c=>({wch:Math.min(48,Math.max(c.length+2,...data.map(r=>String(r[c]??"").length+1)))})); return ws; }
+async function guardarXlsx(filename,sheets){ if(!window.XLSX){ toast("No cargó el generador de Excel. Recarga la página."); return; }
+  if(!S.downloads){ toast("Las descargas no están disponibles en esta vista."); return; }
+  const wb=XLSX.utils.book_new(); sheets.forEach(s=>XLSX.utils.book_append_sheet(wb,hoja(s.titulo,s.rows,s.resumen,s.plano),s.nombre.slice(0,31)));
+  const buf=XLSX.write(wb,{bookType:"xlsx",type:"array"});
+  try{ await S.downloads.save({filename,data:new Blob([buf])}); toast("Archivo descargado"); }catch(err){ if(err&&err.code==="declined") return; toast(err&&err.code==="rate_limited"?"Hay otra descarga en curso. Intenta en un momento.":"No se pudo descargar el archivo."); } }
+const stamp = () => iso(today());
+
+/* --- ajustes --- */
+function vAjustes(){ const c=S.config; const n=S.emps.filter(e=>e.ejemplo).length; const u=S.usage;
+  return `<div class="stack"><h1>Ajustes</h1><div class="grid2">
+  <form class="card pad stack" data-form="config"><h2>Parámetros ${new Date().getFullYear()}</h2><div class="fgrid" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+    <div class="field"><label for="g-smmlv">Salario mínimo (SMMLV)</label><input id="g-smmlv" class="mono" name="smmlv" type="number" value="${c.smmlv}"><span class="hint">Decreto 1469 de 2025</span></div>
+    <div class="field"><label for="g-aux">Auxilio de transporte</label><input id="g-aux" class="mono" name="auxTransporte" type="number" value="${c.auxTransporte}"><span class="hint">Decreto 1470 de 2025</span></div>
+    <div class="field"><label for="g-dias">Avisar renovaciones con</label><input id="g-dias" class="mono" name="diasAlerta" type="number" min="5" max="120" value="${c.diasAlerta}"><span class="hint">días de anticipación al preaviso</span></div>
+    <div class="field"><label for="g-emp">Razón social en informes</label><input id="g-emp" name="empresa" value="${esc(c.empresa)}"></div>
+  </div><div class="formfoot"><button class="btn pri" type="submit">Guardar parámetros</button></div></form>
+  <div class="stack">
+    <div class="card pad stack"><h2>Importar empleados</h2><p class="muted" style="margin:0">Sube la plantilla de la app o las respuestas de una encuesta de Google Forms en .xlsx o .csv. Revisas cómo se lee cada columna antes de guardar.</p>
+      <div class="row"><button class="btn" data-act="plantilla">Descargar plantilla</button><label class="btn pri">Elegir archivo<input type="file" hidden id="imp-file" accept=".xlsx,.xls,.csv"></label></div>
+      ${vImport()}</div>
+    <div class="card pad stack"><h2>Archivos y datos</h2><dl class="kv"><dt>Expedientes</dt><dd class="num">${S.emps.length}</dd><dt>Archivos cargados</dt><dd class="num">${u?`${u.files} · ${(u.bytes/1048576).toFixed(1)} MB de ${(u.maxBytes/1048576).toFixed(0)} MB`:"—"}</dd></dl>
+      <div class="row"><button class="btn" data-act="resp-exp" id="resp-exp">Descargar respaldo (.zip)</button><label class="btn">Restaurar respaldo<input type="file" hidden id="resp-file" accept=".zip"></label></div>
+      <span class="muted" style="font-size:13px">El respaldo trae todos los expedientes, cargos, KPI y archivos cargados. Sirve para guardar una copia o pasar la información a otra versión de la app.</span>
+      ${n?`<button class="btn danger" data-act="borrar-ejemplos">Borrar ${n} empleados de ejemplo</button>`:""}
+      <p class="muted" style="margin:0;font-size:13px">${S.modo==="web"?"Solo entran los usuarios autorizados en Supabase.":"Esta app es privada: solo tú y quien invites como Editor ven los expedientes."} Son datos personales protegidos por la Ley 1581 de 2012; da acceso solo a quien maneje gestión humana o nómina.</p></div>
+  </div></div></div>`; }
+const PLANTILLA_COLS=["Nombres","Apellidos","Tipo documento","Número documento","Fecha nacimiento","Celular","Correo","Dirección","Municipio","Cargo","Área","Jefe inmediato","Fecha ingreso","Tipo contrato","Fin contrato","Salario","EPS","Fondo pensiones","Fondo cesantías","ARL","Riesgo ARL","Caja compensación","Banco","Contacto emergencia nombre","Contacto emergencia parentesco","Contacto emergencia teléfono","Estado civil","Nivel de estudios","Número de hijos","RH","Talla camisa","Talla pantalón","Talla calzado"];
+const sinTilde = s => String(s??"").normalize("NFD").replace(/[̀-ͯ]/g,"").trim().toLowerCase();
+const capital = s => { s=String(s??"").trim(); if(!s||(s!==s.toUpperCase()&&s!==s.toLowerCase())) return s; const l=s.toLowerCase(); return l.charAt(0).toUpperCase()+l.slice(1); };
+const titulo = s => { s=String(s??"").trim(); if(!s||(s!==s.toUpperCase()&&s!==s.toLowerCase())) return s; return s.toLowerCase().split(/\s+/).map((w,i)=>i&&["de","del","la","las","los","y"].includes(w)?w:w.charAt(0).toUpperCase()+w.slice(1)).join(" "); };
+const ROMANO = {"1":"I","2":"II","3":"III","4":"IV","5":"V"};
+function parseFecha(v){ if(!v&&v!==0) return ""; if(typeof v==="number"&&window.XLSX){ const p=XLSX.SSF.parse_date_code(v); return p?`${p.y}-${String(p.m).padStart(2,"0")}-${String(p.d).padStart(2,"0")}`:""; } if(v instanceof Date) return iso(new Date(v.getFullYear(),v.getMonth(),v.getDate(),12)); const s=String(v).trim();
+  let m=s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/); if(m) return `${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}`;
+  m=s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/); if(m) return `${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`; return ""; }
+/* importador: plantilla de la app o respuestas de Google Forms */
+const IMP_CAMPOS = [["","No importar"],["_obs","Agregar a observaciones"],["nombreCompleto","Nombre completo (se separa)"],["nombres","Nombres"],["apellidos","Apellidos"],["tipoDoc","Tipo de documento"],["documento","Número de documento"],
+ ["fechaNacimiento","Fecha de nacimiento"],["telefono","Celular"],["email","Correo"],["direccion","Dirección"],["barrio","Barrio (se une a la dirección)"],["ciudad","Municipio"],["estadoCivil","Estado civil"],["nivelEstudios","Nivel de estudios"],["numHijos","Número de hijos"],["rh","Grupo sanguíneo y RH"],
+ ["tallaCamisa","Talla de camisa"],["tallaPantalon","Talla de pantalón"],["tallaCalzado","Talla de calzado"],["eps","EPS"],["afp","Fondo de pensiones"],["cesantias","Fondo de cesantías"],["arl","ARL"],["riesgoArl","Clase de riesgo ARL"],["ccf","Caja de compensación"],["banco","Banco"],
+ ["emergNombre","Contacto de emergencia: nombre"],["emergParentesco","Contacto de emergencia: parentesco"],["emergTel","Contacto de emergencia: teléfono"],
+ ["cargo","Cargo"],["area","Área"],["jefe","Jefe inmediato"],["fechaIngreso","Fecha de ingreso"],["tipoContrato","Tipo de contrato"],["finContrato","Fin de contrato"],["salario","Salario"]];
+const IMP_LAB = Object.fromEntries(IMP_CAMPOS);
+const LABORALES = ["cargo","area","jefe","fechaIngreso","tipoContrato","finContrato","salario"];
+function adivinar(h){ const t=sinTilde(h); const has=(...w)=>w.some(x=>t.includes(x));
+  if(!t||has("marca temporal","timestamp","puntuacion")) return "";
+  if(has("emergencia","en caso de")){ if(has("parentesco","relacion")) return "emergParentesco"; if(has("telefono","celular","numero","contacto tel","whatsapp")) return "emergTel"; return "emergNombre"; }
+  if(has("parentesco")) return "emergParentesco";
+  if(has("correo","email","e-mail")) return "email";
+  if(has("expedicion","expedido")) return "_obs";
+  if(has("tipo de documento","tipo documento","tipo de identificacion")) return "tipoDoc";
+  if(has("nombre completo","nombres y apellidos","nombre y apellido","nombres completos")) return "nombreCompleto";
+  if(has("apellido")) return "apellidos";
+  if(has("nacimiento")) return "fechaNacimiento";
+  if(has("numero de documento","numero documento","cedula","documento de identidad","identificacion","documento")) return "documento";
+  if(has("ingreso")) return "fechaIngreso";
+  if(has("fin de contrato","fin contrato","terminacion")) return "finContrato";
+  if(has("tipo de contrato","tipo contrato")) return "tipoContrato";
+  if(has("celular","telefono","whatsapp","movil")) return "telefono";
+  if(has("barrio")) return "barrio";
+  if(has("direccion","residencia")) return "direccion";
+  if(has("municipio","ciudad")) return "ciudad";
+  if(has("estado civil")) return "estadoCivil";
+  if(has("estudio","escolaridad","formacion academica","nivel educativo")) return "nivelEstudios";
+  if(has("hijo")) return "numHijos";
+  if(has("sangre","sanguineo","rh")) return "rh";
+  if(has("camisa","blusa","camiseta","overol","chaqueta")) return "tallaCamisa";
+  if(has("pantalon")) return "tallaPantalon";
+  if(has("calzado","zapato","bota")) return "tallaCalzado";
+  if(has("eps","entidad promotora","entidad de salud")) return "eps";
+  if(has("cesantia")) return "cesantias";
+  if(has("pension")) return "afp";
+  if(has("riesgo arl","clase de riesgo","nivel de riesgo")||(has("riesgo")&&!has("arl"))) return "riesgoArl";
+  if(has("arl","riesgos laborales")) return "arl";
+  if(has("caja de compensacion","caja compensacion","caja")) return "ccf";
+  if(has("banco")) return "banco";
+  if(has("cargo")) return "cargo";
+  if(has("jefe")) return "jefe";
+  if(has("area","dependencia")) return "area";
+  if(has("salario","sueldo")) return "salario";
+  if(has("nombre")) return "nombres";
+  return "_obs"; }
+async function leerImport(file){ if(!window.XLSX){ toast("No cargó el lector de Excel. Recarga la página."); return; }
+  try{ const isCsv=/\.csv$/i.test(file.name); const wb=isCsv?XLSX.read(await file.text(),{type:"string",raw:false}):XLSX.read(await file.arrayBuffer(),{cellDates:false});
+    const out=prepararImport(wb); if(out.error){ S.importRows=null; render(); return toast(out.error); } out.archivo=file.name; S.importRows=out; render(); }
+  catch(_){ toast("No se pudo leer el archivo. Súbelo en formato .xlsx o .csv."); } }
+function prepararImport(wb){ const ws=wb.Sheets[wb.SheetNames[0]]; const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:true,blankrows:false});
+  let hi=aoa.slice(0,15).findIndex(r=>r.some(c=>/^(marca temporal|timestamp)$/.test(sinTilde(c))));
+  if(hi<0) hi=aoa.slice(0,15).findIndex(r=>r.filter(c=>String(c).trim()).length>=3&&r.some(c=>["documento","cedula","nombre","identificacion"].some(w=>sinTilde(c).includes(w))));
+  if(hi<0) return {error:"No encontré la fila de encabezados. La primera fila debe tener los nombres de las columnas (por ejemplo: Nombre, Cédula, Celular)."};
+  const head=aoa[hi].map(c=>String(c).trim()); const usados=new Set();
+  const map=head.map(h=>{ let k=adivinar(h); if(k&&k!=="_obs"){ if(usados.has(k)) k="_obs"; else usados.add(k); } if(!h) k=""; return k; });
+  const rows=aoa.slice(hi+1).filter(r=>r.some(c=>String(c).trim()));
+  if(!rows.length) return {error:"El archivo no tiene respuestas debajo de los encabezados."};
+  return {head,map,rows,actualizar:true}; }
+const limpiaNum = v => String(v??"").trim().replace(/\.0+$/,"");
+const limpiaDoc = v => limpiaNum(v).replace(/[.\s,]/g,"").toUpperCase();
+function tipoDocDe(v){ const t=sinTilde(v); if(!t) return ""; if(t==="cc"||t.includes("ciudadania")) return "CC"; if(t==="ce"||t.includes("extranjeria")) return "CE"; if(t.includes("ppt")||t.includes("proteccion temporal")) return "PPT"; if(t.includes("pasaporte")) return "Pasaporte"; if(t==="ti"||t.includes("tarjeta de identidad")) return "TI"; return String(v).trim().toUpperCase(); }
+function partirNombre(s){ const w=titulo(String(s||"").trim().replace(/\s+/g," ")).split(" ").filter(Boolean); if(w.length<=1) return [w.join(" "),""]; if(w.length===2) return [w[0],w[1]]; if(w.length===3) return [w[0],w.slice(1).join(" ")]; return [w.slice(0,w.length-2).join(" "),w.slice(-2).join(" ")]; }
+function valorCampo(k,v){ const s=String(v??"").trim(); if(s==="") return "";
+  switch(k){ case "documento": return limpiaDoc(v); case "tipoDoc": return tipoDocDe(v);
+    case "nombres": case "apellidos": case "ciudad": case "emergNombre": return titulo(s);
+    case "fechaNacimiento": case "fechaIngreso": case "finContrato": return parseFecha(v);
+    case "telefono": case "emergTel": return limpiaNum(v).replace(/[^\d+]/g,"");
+    case "email": return s.toLowerCase(); case "cargo": case "jefe": case "emergParentesco": case "estadoCivil": case "nivelEstudios": return capital(s);
+    case "area": return AREAS.find(a=>sinTilde(a)===sinTilde(s))||capital(s);
+    case "salario": return typeof v==="number"?v:(Number(s.replace(/[^\d]/g,""))||"");
+    case "riesgoArl": { const r=limpiaNum(v).toUpperCase(); const x=ROMANO[r]||r; return ["I","II","III","IV","V"].includes(x)?x:""; }
+    case "tipoContrato": return TIPOS_CONTRATO.find(t=>sinTilde(t)===sinTilde(s))||TIPOS_CONTRATO.find(t=>sinTilde(s).includes(sinTilde(t).replace("termino ","")))||"";
+    case "rh": return s.toUpperCase().replace(/\s+/g,""); case "numHijos": case "tallaCamisa": case "tallaPantalon": case "tallaCalzado": return limpiaNum(v).toUpperCase();
+    default: return s; } }
+function filaAObjeto(imp,row){ const o={}, obs=[];
+  imp.map.forEach((k,i)=>{ if(!k) return; const raw=row[i]; if(String(raw??"").trim()==="") return;
+    if(k==="_obs"){ obs.push(`${imp.head[i]}: ${typeof raw==="number"&&/fecha/i.test(imp.head[i])?dmy(parseFecha(raw)):String(raw).trim()}`); return; }
+    if(k==="nombreCompleto"){ const [n,a]=partirNombre(raw); if(n) o.nombres=n; if(a) o.apellidos=a; return; }
+    const v=valorCampo(k,raw); if(v!=="") o[k]=v; });
+  if(o.barrio){ o.direccion=[o.direccion,"barrio "+titulo(o.barrio)].filter(Boolean).join(", "); delete o.barrio; }
+  return {o,obs}; }
+function analizarImport(imp){ const porDoc=new Map(); let malos=0; const vistos=new Map();
+  for(const row of imp.rows){ const {o,obs}=filaAObjeto(imp,row); if(!o.documento){ malos++; continue; } vistos.set(o.documento,{o,obs}); }
+  const nuevos=[], actualizar=[], iguales=[], sinNombre=[]; const sello=`Encuesta (${dmy(iso(today()))})`;
+  for(const [doc,{o,obs}] of vistos){ const e=S.emps.find(x=>limpiaDoc(x.documento)===doc);
+    if(!e){ if(!o.nombres){ sinNombre.push(doc); continue; } nuevos.push({o,obs}); continue; }
+    if(!imp.actualizar) continue;
+    const cambios={}; for(const [k,v] of Object.entries(o)){ if(k==="documento"||k==="tipoContrato"||k==="finContrato") continue; if(LABORALES.includes(k)&&e[k]!==undefined&&e[k]!=="") continue; if(String(e[k]??"")!==String(v)) cambios[k]=v; }
+    const nuevasObs=obs.filter(l=>!String(e.observaciones||"").includes(l)); if(nuevasObs.length) cambios.observaciones=[e.observaciones,`${sello}:\n`+nuevasObs.join("\n")].filter(Boolean).join("\n\n");
+    (Object.keys(cambios).length?actualizar:iguales).push({e,cambios}); }
+  return {nuevos,actualizar,iguales,malos,sinNombre,repetidas:imp.rows.length-malos-vistos.size,sello}; }
+function empleadoNuevo({o,obs},sello){ const ct=o.fechaIngreso?[{id:uid(),tipo:o.tipoContrato||"Término indefinido",inicio:o.fechaIngreso,fin:(o.tipoContrato&&o.tipoContrato!=="Término indefinido")?(o.finContrato||""):"",cargo:o.cargo||"",salario:o.salario||""}]:[];
+  const e={...o}; delete e.tipoContrato; delete e.finContrato; if(!e.tipoDoc) e.tipoDoc="CC"; if(obs.length) e.observaciones=`${sello}:\n`+obs.join("\n");
+  return {...e,estado:"activo",contratos:ct,documentos:[],novedades:[],creado:new Date().toISOString()}; }
+function vImport(){ const imp=S.importRows; if(!imp) return ""; const r=analizarImport(imp);
+  const ej=i=>{ const v=imp.rows.map(x=>x[i]).find(x=>String(x??"").trim()!==""); return v===undefined?"":(typeof v==="number"&&/fecha|nacimiento|ingreso/i.test(imp.head[i])?dmy(parseFecha(v)):String(v)); };
+  const total=r.nuevos.length+r.actualizar.length;
+  return `<div class="stack" style="gap:12px"><div class="spread"><b class="mono" style="font-size:13px;overflow-wrap:anywhere">${esc(imp.archivo||"")}</b><span class="muted">${imp.rows.length} filas</span></div>
+  <details ${imp.abierto?"open":""} id="imp-det"><summary style="cursor:pointer;font-weight:700">Revisar columnas (${imp.head.filter(Boolean).length})</summary>
+  <div class="tablewrap" style="margin-top:8px"><table><thead><tr><th>Pregunta o columna</th><th>Ejemplo</th><th>Guardar como</th></tr></thead><tbody>${imp.head.map((h,i)=>h?`<tr><td style="min-width:12em">${esc(h)}</td><td class="muted" style="max-width:14em;overflow-wrap:anywhere">${esc(ej(i).slice(0,60))}</td><td><select data-imp-col="${i}" aria-label="Guardar ${esc(h)} como">${IMP_CAMPOS.map(([k,l])=>`<option value="${k}" ${imp.map[i]===k?"selected":""}>${esc(l)}</option>`).join("")}</select></td></tr>`:"").join("")}</tbody></table></div></details>
+  ${imp.map.includes("documento")?"":`<div class="banner c-crit"><span>Ninguna columna está marcada como <b>Número de documento</b>. Es lo que identifica a cada persona: elígela arriba.</span></div>`}
+  <label class="row" style="font-size:14px"><input type="checkbox" id="imp-upd" ${imp.actualizar?"checked":""}> Actualizar los datos de quienes ya están en la app (se buscan por número de documento)</label>
+  <dl class="kv" style="max-width:420px"><dt>Empleados nuevos</dt><dd class="num">${r.nuevos.length}</dd><dt>Fichas que se actualizan</dt><dd class="num">${r.actualizar.length}</dd>${r.iguales.length?`<dt>Ya estaban al día</dt><dd class="num">${r.iguales.length}</dd>`:""}${r.repetidas?`<dt>Respuestas repetidas (se toma la última)</dt><dd class="num">${r.repetidas}</dd>`:""}${r.malos?`<dt>Filas sin documento</dt><dd class="num" style="color:var(--crit)">${r.malos}</dd>`:""}${r.sinNombre.length?`<dt>Nuevos sin nombre (se omiten)</dt><dd class="num" style="color:var(--crit)">${r.sinNombre.length}</dd>`:""}</dl>
+  ${r.actualizar.length?`<div class="tablewrap"><table><thead><tr><th>Empleado</th><th>Campos que cambian</th></tr></thead><tbody>${r.actualizar.slice(0,12).map(({e,cambios})=>`<tr><td>${esc(nombre(e))}</td><td>${Object.keys(cambios).map(k=>esc(k==="observaciones"?"Observaciones":IMP_LAB[k]||k)).join(", ")}</td></tr>`).join("")}</tbody></table></div>${r.actualizar.length>12?`<span class="muted" style="font-size:13px">y ${r.actualizar.length-12} más</span>`:""}`:""}
+  <span class="muted" style="font-size:13px">En las fichas que ya existen, cargo, área, salario y fecha de ingreso solo se llenan si estaban vacíos. Las preguntas sin campo propio quedan en Observaciones.</span>
+  <div class="formfoot" style="padding-top:10px"><button class="btn" data-act="imp-cancel">Cancelar</button><button class="btn pri" data-act="imp-go" ${total?"":"disabled"}>Importar ${total||""}</button></div></div>`; }
+
+
+
+/* ---------- respaldo ---------- */
+const JSZIP_URL="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+const cargarJSZip = () => window.JSZip ? Promise.resolve() : cargarScript(JSZIP_URL);
+function archivosRef(emps,cargos){ const out=new Map(); const add=a=>{ if(a&&a.id&&!out.has(a.id)) out.set(a.id,a); };
+  (emps||[]).forEach(e=>{ ["contratos","documentos","novedades"].forEach(k=>(e[k]||[]).forEach(x=>add(x.archivo))); }); (cargos||[]).forEach(c=>add(c.manual)); return out; }
+async function exportarRespaldo(btn){ if(!S.downloads){ toast("Las descargas no están disponibles en esta vista."); return; }
+  const txt=btn.textContent; btn.disabled=true;
+  try{ await cargarJSZip(); const zip=new window.JSZip(); const arch=[...archivosRef(S.emps,S.cargos).values()]; let ok=0, malos=0;
+    for(let i=0;i<arch.length;i++){ btn.textContent=`Empacando archivos ${i+1} de ${arch.length}…`; try{ zip.file("archivos/"+arch[i].id, await obtenerBlob(arch[i])); ok++; }catch(_){ malos++; } }
+    zip.file("respaldo.json", JSON.stringify({app:"gestion-humana-aspm",version:1,fecha:new Date().toISOString(),empleados:S.emps,cargos:S.cargos,config:S.config},null,1));
+    btn.textContent="Comprimiendo…"; const blob=await zip.generateAsync({type:"blob",compression:"DEFLATE"});
+    await S.downloads.save({filename:`Respaldo Gestión Humana ${stamp()}.zip`,data:blob});
+    toast(`Respaldo listo: ${S.emps.length} empleados, ${S.cargos.length} cargos, ${ok} archivos${malos?` (${malos} archivos no se pudieron leer)`:""}`); }
+  catch(err){ if(!(err&&err.code==="declined")) toast("No se pudo generar el respaldo."); }
+  finally{ btn.disabled=false; btn.textContent=txt; } }
+async function importarRespaldo(file){
+  try{ await cargarJSZip(); const zip=await window.JSZip.loadAsync(file); const j=zip.file("respaldo.json"); if(!j) return toast("Ese .zip no es un respaldo de esta app.");
+    const data=JSON.parse(await j.async("string")); if(data.app!=="gestion-humana-aspm") return toast("Ese .zip no es un respaldo de esta app.");
+    const emps=data.empleados||[], cargos=data.cargos||[]; const meta=archivosRef(emps,cargos); const rutas=Object.keys(zip.files).filter(n=>n.startsWith("archivos/")&&!zip.files[n].dir);
+    if(rutas.length&&!S.assets) return toast("Para restaurar los archivos necesitas permiso de edición.");
+    if(!await confirmar("Restaurar respaldo",`Se cargarán ${emps.length} empleados, ${cargos.length} cargos y ${rutas.length} archivos del ${fmtD((data.fecha||"").slice(0,10))}. Los registros que ya existan con el mismo identificador se reemplazan.`,"Restaurar",false)) return;
+    const mapa={}; let i=0;
+    for(const r of rutas){ i++; toast(`Subiendo archivos ${i} de ${rutas.length}…`); const id=r.slice(9); const m=meta.get(id)||{}; const tipo=m.tipo||"application/pdf";
+      const blob=new Blob([await zip.file(r).async("arraybuffer")],{type:tipo}); const up=await S.assets.upload(blob,{type:tipo}); mapa[id]=up.id; }
+    const fix=a=>a&&a.id&&mapa[a.id]?{...a,id:mapa[a.id]}:a; i=0;
+    for(const e0 of emps){ i++; toast(`Guardando expedientes ${i} de ${emps.length}…`); const e=clone(e0); const id=e.id; delete e.id; ["contratos","documentos","novedades"].forEach(k=>e[k]=(e[k]||[]).map(x=>x.archivo?{...x,archivo:fix(x.archivo)}:x)); await S.db.doc("empleados/"+id).set(e); }
+    for(const c0 of cargos){ const c=clone(c0); const id=c.id; delete c.id; if(c.manual) c.manual=fix(c.manual); await S.db.doc("cargos/"+id).set(c); }
+    if(data.config) await S.db.doc("config/general").set(data.config);
+    toast(`Respaldo restaurado: ${emps.length} empleados, ${cargos.length} cargos, ${rutas.length} archivos`); }
+  catch(err){ toast(err&&err.code?errMsg(err):"No se pudo leer el respaldo."); } }
+/* ---------- eventos ---------- */
+document.addEventListener("click",async ev=>{ const el=ev.target.closest("[data-act]"); if(!el) return; const a=el.dataset.act, id=el.dataset.id, r=el.dataset.r;
+  if(a==="nav") return setView(el.dataset.v);
+  if(a==="nuevo") return setView("nuevo");
+  if(a==="ver"){ S.sel=id; S.ftab="ficha"; return setView("ficha"); }
+  if(a==="ftab"){ S.ftab=el.dataset.t; S.dirty=false; S.edit=null; return render(); }
+  if(a==="edit-ct"||a==="edit-nov"){ S.edit={t:a==="edit-ct"?"ct":"nov",id:r}; S.dirty=false; render(); requestAnimationFrame(()=>{ const f=$(`form[data-form="${a==="edit-ct"?"contrato":"novedad"}"]`); if(f){ f.scrollIntoView({block:"center",behavior:"smooth"}); const x=f.querySelector("select,input"); if(x) x.focus({preventScroll:true}); } }); return; }
+  if(a==="edit-cancel"){ S.edit=null; S.dirty=false; return render(); }
+  if(a==="rep"){ S.rep=r; return render(); }
+  if(a==="rep-go"){ S.rep=r; return setView("informes"); }
+  if(a==="rep-xlsx"){ const R=INFORMES.find(x=>x.id===S.rep); const o=R.build(S.rp); return guardarXlsx(`${R.nombre} ${stamp()}.xlsx`,[{nombre:R.nombre,titulo:R.nombre,rows:o.rows,resumen:o.resumen}]); }
+  if(a==="rep-all") return guardarXlsx(`Informe Gestión Humana ${stamp()}.xlsx`,INFORMES.map(R=>{ const o=R.build(S.rp); return {nombre:R.nombre,titulo:R.nombre,rows:o.rows,resumen:o.resumen}; }));
+  if(a==="plantilla") return guardarXlsx("Plantilla empleados.xlsx",[{nombre:"Empleados",plano:true,rows:[Object.fromEntries(PLANTILLA_COLS.map(c=>[c,""]))]},{nombre:"Instrucciones",titulo:"Cómo llenar la plantilla",rows:[{"Columna":"Fechas","Indicación":"Formato de fecha de Excel, AAAA-MM-DD o DD/MM/AAAA"},{"Columna":"Tipo contrato","Indicación":TIPOS_CONTRATO.join(", ")},{"Columna":"Fin contrato","Indicación":"Solo para término fijo, obra o aprendizaje"},{"Columna":"Riesgo ARL","Indicación":"1 a 5, o I a V"},{"Columna":"Número documento","Indicación":"Sin puntos. Si ya existe en la app, la fila se omite"}]}]);
+  if(a==="resp-exp") return exportarRespaldo(el);
+  if(a==="imp-cancel"){ S.importRows=null; return render(); }
+  if(a==="imp-go"){ const r=analizarImport(S.importRows); el.disabled=true; let n=0,u=0;
+    try{ for(const x of r.nuevos){ await saveEmp({id:uid(),...empleadoNuevo(x,r.sello)}); n++; } for(const {e,cambios} of r.actualizar){ const y=getEmp(e.id); if(!y) continue; Object.assign(y,cambios); await saveEmp(y); u++; } }
+    catch(err){ toast(errMsg(err)); S.importRows=null; return render(); }
+    S.importRows=null; toast(`${n} empleados creados · ${u} fichas actualizadas`); return render(); }
+  if(a==="borrar-ejemplos"){ const ex=S.emps.filter(e=>e.ejemplo); if(!await confirmar("Borrar empleados de ejemplo",`Se eliminarán ${ex.length} expedientes marcados como ejemplo. Los empleados reales no se tocan.`,"Borrar ejemplos")) return;
+    for(const e of ex){ try{ await S.db.doc("empleados/"+e.id).delete(); }catch(_){} }
+    for(const c of S.cargos.filter(c=>c.ejemplo)){ try{ await S.db.doc("cargos/"+c.id).delete(); }catch(_){} } return toast("Ejemplos eliminados"); }
+  if(a==="ver-cargo"){ S.cargoSel=id; return setView("cargo"); }
+  if(a==="nuevo-cargo"){ const n=el.dataset.n||""; const ya=S.cargos.find(c=>n&&norm(c.nombre)===norm(n)); S.cargoSel=ya?ya.id:"__nuevo"; S.cargoNuevo=n; return setView("cargo"); }
+  if((a==="file-ver"||a==="file-dl")&&el.dataset.s==="manual"){ const c=S.cargos.find(x=>x.id===r); if(!c||!c.manual) return; return a==="file-ver"?verArchivo(c.manual):descargarArchivo(c.manual); }
+  const cg=S.cargoSel&&S.cargoSel!=="__nuevo"?getCargo(S.cargoSel):null;
+  if(a==="del-kpi"&&cg){ const k=cg.kpis.find(x=>x.id===r); const n=(cg.mediciones||[]).filter(m=>m.kpiId===r).length; if(!await confirmar("Quitar indicador",`Se quita “${k.nombre}”${n?` y sus ${n} resultados registrados`:""}.`,"Quitar")) return;
+    cg.kpis=cg.kpis.filter(x=>x.id!==r); cg.mediciones=(cg.mediciones||[]).filter(m=>m.kpiId!==r); try{ await saveCargo(cg); toast("Indicador quitado"); }catch(err){ toast(errMsg(err)); } return; }
+  if(a==="del-med"&&cg){ cg.mediciones=(cg.mediciones||[]).filter(m=>m.id!==r); try{ await saveCargo(cg); toast("Resultado quitado"); }catch(err){ toast(errMsg(err)); } return; }
+  if(a==="del-cargo"&&cg){ const n=personasCargo(cg).length; if(!await confirmar("Eliminar cargo",`Se borra el manual de “${cg.nombre}”, su PDF, sus indicadores y resultados.${n?` Las ${n} personas con este cargo lo conservan en su ficha, pero quedan sin manual.`:""}`,"Eliminar cargo")) return;
+    try{ await S.db.doc("cargos/"+cg.id).delete(); await borrarArchivo(cg.manual); toast("Cargo eliminado"); setView("cargos"); }catch(err){ toast(errMsg(err)); } return; }
+  if(a==="cargo-xlsx"&&cg){ const funcs=String(cg.funciones||"").split("\n").map(s=>s.trim()).filter(Boolean);
+    return guardarXlsx(`Manual de funciones ${cg.nombre}.xlsx`,[
+      {nombre:"Manual",titulo:`Manual de funciones · ${cg.nombre}`,rows:[["Cargo",cg.nombre],["Área",cg.area],["Reporta a",cg.reportaA],["Versión",cg.version],["Actualizado",dmy(cg.fechaActualizacion)],["Personas en el cargo",personasCargo(cg).map(nombre).join(", ")],["Objetivo",cg.objetivo],...funcs.map((f,i)=>[`Función ${i+1}`,f]),["Requisitos",cg.requisitos],["Competencias",cg.competencias]].map(([k,v])=>({"Campo":k,"Detalle":v||""}))},
+      {nombre:"KPI",titulo:"Indicadores del cargo",rows:(cg.kpis||[]).map(k=>({"Indicador":k.nombre,"Fórmula":k.formula||"","Meta":metaTxt(k),"Frecuencia":k.frecuencia||"","Fuente":k.fuente||""}))},
+      {nombre:"Resultados",titulo:"Resultados registrados",rows:(cg.mediciones||[]).slice().sort((a,b)=>b.periodo.localeCompare(a.periodo)).map(m=>{ const k=(cg.kpis||[]).find(x=>x.id===m.kpiId)||{}; const p=cumpl(k,m.valor); return {"Periodo":mesTxt(m.periodo),"Indicador":k.nombre||"","Medido a":persNombre(m.empleadoId),"Resultado":Number(m.valor),"Meta":k.nombre?metaTxt(k):"","Cumplimiento %":p==null?"":Math.round(Math.min(p,150)),"Observación":m.nota||""}; })}]); }
+  const e=S.sel?getEmp(S.sel):null;
+  if(a==="ficha-xlsx"&&e){ const c=rowPlanta(e); return guardarXlsx(`Ficha ${nombre(e)}.xlsx`,[{nombre:"Ficha",titulo:"Ficha del empleado",rows:Object.entries(c).map(([k,v])=>({"Campo":k,"Valor":v}))},{nombre:"Contratos",titulo:"Contratos y otrosíes",rows:ordenC(e).map(k=>({"Tipo":k.esOtrosi?"Otrosí":k.tipo,"Inicio":dmy(k.inicio),"Fin":dmy(k.fin),"Cargo":k.cargo||"","Salario":Number(k.salario)||"","Firmado cargado":k.archivo?"Sí":"No","Nota":k.nota||""}))},{nombre:"Novedades",titulo:"Novedades",rows:(e.novedades||[]).map(n=>({"Tipo":n.tipo,"Desde":dmy(n.desde),"Hasta":dmy(n.hasta),"Días":Number(n.dias)||"","Días pagados en dinero":Number(n.diasComp)||"","Valor pagado":Number(n.valorComp)||"","Detalle":n.nota||""}))},{nombre:"Documentos",titulo:"Expediente",rows:(e.documentos||[]).map(d=>({"Documento":d.categoria,"Fecha":dmy(d.fecha),"Vence":dmy(d.vence),"Archivo":d.archivo?d.archivo.nombre:""}))}]); }
+  if((a==="file-ver"||a==="file-dl")&&e){ const s=el.dataset.s; const item=s==="ct"?(e.contratos||[]).find(x=>x.id===r):s==="doc"?(e.documentos||[]).find(x=>x.id===r):(e.novedades||[]).find(x=>x.id===r); if(!item||!item.archivo) return; return a==="file-ver"?verArchivo(item.archivo):descargarArchivo(item.archivo); }
+  if(a==="del-ct"&&e){ const k=e.contratos.find(x=>x.id===r); if(!await confirmar("Eliminar contrato",`Se borra el registro ${k.esOtrosi?"del otrosí":"del contrato"} del ${fmtD(k.inicio)}${k.archivo?" y su documento firmado":""}.`,"Eliminar")) return;
+    e.contratos=e.contratos.filter(x=>x.id!==r); if(S.edit&&S.edit.id===r) S.edit=null; try{ await saveEmp(e); await borrarArchivo(k.archivo); toast("Contrato eliminado"); }catch(err){ toast(errMsg(err)); } return; }
+  if(a==="del-doc"&&e){ const d=e.documentos.find(x=>x.id===r); if(!await confirmar("Quitar documento",`Se quita “${d.categoria}” del expediente${d.archivo?" junto con su archivo":""}.`,"Quitar")) return;
+    e.documentos=e.documentos.filter(x=>x.id!==r); try{ await saveEmp(e); await borrarArchivo(d.archivo); toast("Documento quitado"); }catch(err){ toast(errMsg(err)); } return; }
+  if(a==="del-nov"&&e){ const n=e.novedades.find(x=>x.id===r); if(!await confirmar("Quitar novedad",`Se quita la novedad “${n.tipo}” del ${fmtD(n.desde)}.`,"Quitar")) return;
+    e.novedades=e.novedades.filter(x=>x.id!==r); if(S.edit&&S.edit.id===r) S.edit=null; try{ await saveEmp(e); await borrarArchivo(n.archivo); toast("Novedad quitada"); }catch(err){ toast(errMsg(err)); } return; }
+  if(a==="reintegrar"&&e){ if(!await confirmar("Reintegrar empleado",`${nombre(e)} vuelve a Activos. Registra el nuevo contrato en la pestaña Contratos.`,"Reintegrar",false)) return; e.estado="activo"; try{ await saveEmp(e); S.ftab="contratos"; toast("Empleado reintegrado"); }catch(err){ toast(errMsg(err)); } return; }
+  if(a==="del-emp"&&e){ if(!await confirmar("Eliminar expediente",`Se borra para siempre el expediente de ${nombre(e)} con todos sus archivos. Si la persona se retiró, mejor registra el retiro: el expediente debe conservarse.`,"Eliminar para siempre")) return;
+    try{ await S.db.doc("empleados/"+e.id).delete(); for(const x of [...(e.contratos||[]),...(e.documentos||[]),...(e.novedades||[])]) await borrarArchivo(x.archivo); toast("Expediente eliminado"); setView("empleados"); }catch(err){ toast(errMsg(err)); } return; }
+});
+document.addEventListener("keydown",ev=>{ if(ev.key==="Enter"&&ev.target.matches(".al[data-act]")) ev.target.click(); if(ev.key==="Escape") $("#modal").innerHTML=""; });
+document.addEventListener("input",ev=>{ const t=ev.target;
+  if(t.id==="f-q"){ S.q=t.value; const pos=t.selectionStart; render(); const n=$("#f-q"); if(n){ n.focus(); try{ n.setSelectionRange(pos,pos); }catch(_){} } return; }
+  if(t.id==="v-comp"){ const e=S.emps.find(x=>x.id===S.sel); const d=Number(t.value)||0; const h=$("#v-valor-hint"); if(h) h.textContent=e&&Number(e.salario)&&d?`Sugerido: ${money(Number(e.salario)/30*d)} (salario ÷ 30 × ${d}).`:"Salario ÷ 30 × días pagados."; }
+  if(t.closest("form[data-form]")) S.dirty=true; });
+document.addEventListener("change",async ev=>{ const t=ev.target;
+  if(t.id==="f-estado"){ S.fEstado=t.value; return render(); } if(t.id==="f-area"){ S.fArea=t.value; return render(); } if(t.id==="f-tipo"){ S.fTipo=t.value; return render(); }
+  if(t.dataset.p){ S.rp[t.dataset.p]=t.value; return render(); }
+  if(t.id==="v-tipo"){ const f=t.closest("form"); f.querySelectorAll(".only-vac").forEach(x=>x.hidden=t.value!=="Vacaciones"); return; }
+  if(t.id==="imp-file"&&t.files[0]) return leerImport(t.files[0]);
+  if(t.id==="resp-file"&&t.files[0]){ const f=t.files[0]; t.value=""; return importarRespaldo(f); }
+  if(t.dataset.impCol!==undefined&&S.importRows){ const i=+t.dataset.impCol, k=t.value; if(k&&k!=="_obs") S.importRows.map=S.importRows.map.map((x,j)=>j!==i&&x===k?"_obs":x); S.importRows.map[i]=k; S.importRows.abierto=true; return render(); }
+  if(t.id==="imp-upd"&&S.importRows){ S.importRows.actualizar=t.checked; return render(); }
+  if(t.id==="kpi-per"&&t.value){ S.kpiPer=t.value; return render(); }
+  if(t.dataset.up==="manual"&&t.files[0]){ const c=getCargo(t.dataset.r); if(!c) return; toast("Subiendo manual…");
+    try{ const old=c.manual; c.manual=await subir(t.files[0]); await saveCargo(c); if(old) await borrarArchivo(old); toast("Manual guardado"); }catch(err){ toast(errMsg(err)); } return; }
+  if(t.dataset.up&&t.files[0]){ const e=getEmp(S.sel); if(!e) return; const s=t.dataset.up, r=t.dataset.r; const arr=s==="ct"?e.contratos:s==="doc"?e.documentos:e.novedades; const item=arr.find(x=>x.id===r); if(!item) return;
+    toast("Subiendo archivo…"); try{ const old=item.archivo; item.archivo=await subir(t.files[0]); await saveEmp(e); if(old) await borrarArchivo(old); toast("Documento firmado guardado"); }catch(err){ toast(errMsg(err)); } }
+});
+document.addEventListener("submit",async ev=>{ const f=ev.target.closest("form[data-form]"); if(!f) return; ev.preventDefault(); const kind=f.dataset.form; const btn=f.querySelector("[type=submit]"); if(btn) btn.disabled=true;
+  const done=msg=>{ S.dirty=false; if(btn) btn.disabled=false; if(msg) toast(msg); render(); };
+  const fail=err=>{ if(btn) btn.disabled=false; toast(errMsg(err)); };
+  const fileOf=name=>{ const i=f.querySelector(`[name="${name}"]`); return i&&i.files&&i.files[0]||null; };
+  try{
+    if(kind==="config"){ const o=leerForm(f); const cfg={smmlv:Number(o.smmlv)||DEF.smmlv,auxTransporte:Number(o.auxTransporte)||DEF.auxTransporte,diasAlerta:Number(o.diasAlerta)||DEF.diasAlerta,empresa:o.empresa||DEF.empresa}; await S.db.doc("config/general").set(cfg); S.config=cfg; return done("Parámetros guardados"); }
+    if(kind==="nuevo"){ const o=leerForm(f); const file=fileOf("ctFile"); delete o.ctFile; const tipo=o.ctTipo, fin=o.ctFin; delete o.ctTipo; delete o.ctFin;
+      if(S.emps.some(x=>String(x.documento).trim()===o.documento)){ if(btn) btn.disabled=false; return toast("Ya existe un empleado con ese documento."); }
+      const ct={id:uid(),tipo,inicio:o.fechaIngreso,fin:fin||"",cargo:o.cargo,salario:o.salario}; if(file) ct.archivo=await subir(file);
+      const e={id:uid(),...o,estado:"activo",contratos:[ct],documentos:[],novedades:[],creado:new Date().toISOString()}; await saveEmp(e); S.sel=e.id; S.ftab="ficha"; S.view="ficha"; return done("Empleado creado"); }
+    if(kind==="cargo"){ const o=leerForm(f); const file=fileOf("manualFile"); delete o.manualFile; const isNew=S.cargoSel==="__nuevo";
+      if(S.cargos.some(x=>norm(x.nombre)===norm(o.nombre)&&x.id!==S.cargoSel)){ if(btn) btn.disabled=false; return toast("Ya existe un cargo con ese nombre."); }
+      const c=isNew?{id:uid(),kpis:[],mediciones:[],creado:new Date().toISOString()}:getCargo(S.cargoSel); if(!c) return fail({}); const viejo=c.nombre;
+      Object.assign(c,o); if(file){ toast("Subiendo manual…"); c.manual=await subir(file); } await saveCargo(c);
+      if(!isNew&&viejo&&norm(viejo)!==norm(c.nombre)) for(const x of S.emps.filter(y=>norm(y.cargo)===norm(viejo))){ const y=getEmp(x.id); y.cargo=c.nombre; await saveEmp(y); }
+      S.cargoSel=c.id; return done(isNew?"Cargo creado":"Manual guardado"); }
+    if(kind==="kpi"){ const o=leerForm(f); const c=getCargo(S.cargoSel); if(!c) return fail({});
+      c.kpis=[...(c.kpis||[]),{id:uid(),nombre:o.nombre,formula:o.formula,fuente:o.fuente,meta:o.meta===""?"":Number(o.meta),unidad:o.unidad,sentido:o.sentido,frecuencia:o.frecuencia}]; await saveCargo(c); return done("Indicador agregado"); }
+    if(kind==="medicion"){ const o=leerForm(f); const c=getCargo(S.cargoSel); if(!c) return fail({}); const val=Number(o.valor);
+      if(o.valor===""||isNaN(val)){ if(btn) btn.disabled=false; return toast("Escribe el resultado en números."); }
+      c.mediciones=(c.mediciones||[]).filter(m=>!(m.kpiId===o.kpiId&&m.periodo===o.periodo&&(m.empleadoId||"")===(o.empleadoId||"")));
+      c.mediciones.push({id:uid(),kpiId:o.kpiId,empleadoId:o.empleadoId||"",periodo:o.periodo,valor:val,nota:o.nota}); await saveCargo(c); S.kpiPer=o.periodo; return done("Resultado guardado"); }
+    const e=getEmp(S.sel); if(!e) return fail({});
+    if(kind==="ficha"){ Object.assign(e,leerForm(f)); await saveEmp(e); return done("Cambios guardados"); }
+    if(kind==="contrato"){ const o=leerForm(f); const file=fileOf("file"); delete o.file; const edId=S.edit&&S.edit.t==="ct"?S.edit.id:null; const old=edId?(e.contratos||[]).find(x=>x.id===edId):null;
+      if(edId&&!old){ S.edit=null; if(btn) btn.disabled=false; return toast("Ese contrato ya no existe."); }
+      const ct={...(old||{}),id:old?old.id:uid(),tipo:o.tipo,inicio:o.inicio,fin:o.fin||"",cargo:o.cargo,salario:o.salario,nota:o.nota,esOtrosi:!!o.esOtrosi};
+      if(ct.fin&&ct.fin<ct.inicio){ if(btn) btn.disabled=false; return toast("La terminación no puede ser anterior al inicio."); }
+      let viejo=null; if(file){ toast("Subiendo contrato…"); ct.archivo=await subir(file); if(old&&old.archivo) viejo=old.archivo; }
+      e.contratos=old?e.contratos.map(x=>x.id===ct.id?ct:x):[...(e.contratos||[]),ct];
+      if(!ct.esOtrosi&&vigente(e)&&vigente(e).id===ct.id){ if(o.cargo) e.cargo=o.cargo; if(o.salario!=="") e.salario=o.salario; }
+      await saveEmp(e); if(viejo) await borrarArchivo(viejo); S.edit=null; return done(old?"Cambios guardados":ct.esOtrosi?"Otrosí registrado":"Contrato registrado"); }
+    if(kind==="documento"){ const o=leerForm(f); const file=fileOf("file"); delete o.file; const d={id:uid(),categoria:o.categoria,nombre:o.nombre,fecha:o.fecha,vence:o.vence}; if(file){ toast("Subiendo documento…"); d.archivo=await subir(file); } e.documentos=[...(e.documentos||[]),d]; await saveEmp(e); return done("Documento agregado"); }
+    if(kind==="novedad"){ const o=leerForm(f); const file=fileOf("file"); delete o.file; let dias=o.dias; if(dias===""&&o.hasta&&o.tipo!=="Vacaciones"){ const a=toD(o.desde),b=toD(o.hasta); if(a&&b) dias=diff(a,b)+1; }
+      const edId=S.edit&&S.edit.t==="nov"?S.edit.id:null; const old=edId?(e.novedades||[]).find(x=>x.id===edId):null; if(edId&&!old){ S.edit=null; if(btn) btn.disabled=false; return toast("Esa novedad ya no existe."); }
+      const n={...(old||{}),id:old?old.id:uid(),tipo:o.tipo,desde:o.desde,hasta:o.hasta,dias:dias===""?"":Number(dias),nota:o.nota}; delete n.diasComp; delete n.valorComp; delete n.valorAuto; let aviso="";
+      if(o.tipo==="Vacaciones"){ const comp=Number(o.diasComp)||0; if(!comp&&!(Number(dias)>0)){ if(btn) btn.disabled=false; return toast("Escribe los días disfrutados, los pagados en dinero o ambos."); }
+        if(comp){ n.diasComp=comp; if(o.valorComp!==""&&o.valorComp!=null) n.valorComp=Number(o.valorComp); else { n.valorComp=Number(e.salario)?Math.round(Number(e.salario)/30*comp):""; n.valorAuto=true; } if(e.estado!=="retirado"&&comp>(Number(dias)||0)) aviso=" · se pagó en dinero más de la mitad, revisa"; } }
+      let viejo=null; if(file){ toast("Subiendo soporte…"); n.archivo=await subir(file); if(old&&old.archivo) viejo=old.archivo; }
+      e.novedades=old?e.novedades.map(x=>x.id===n.id?n:x):[...(e.novedades||[]),n]; await saveEmp(e); if(viejo) await borrarArchivo(viejo); S.edit=null; return done((old?"Cambios guardados":"Novedad registrada")+aviso); }
+    if(kind==="retiro"){ const o=leerForm(f); const r={fecha:o.fecha,motivo:o.motivo,nota:o.nota}; CHECK_RETIRO.forEach(([k])=>r[k]=!!o["ck_"+k]); const nuevo=e.estado!=="retirado";
+      if(nuevo&&!await confirmar("Registrar retiro",`${nombre(e)} pasa a Retirados desde el ${fmtD(r.fecha)}. Su expediente se conserva.`,"Registrar retiro",false)){ if(btn) btn.disabled=false; return; }
+      e.retiro=r; e.estado="retirado"; await saveEmp(e); return done(nuevo?"Retiro registrado":"Cambios guardados"); }
+  }catch(err){ fail(err); } });
+
+/* ---------- arranque ---------- */
+const hv=(location.hash||"").slice(1); if(["panel","empleados","cargos","informes","ajustes"].includes(hv)) S.view=hv;
+render();
+/* ---------- versión web: conexión con Supabase ---------- */
+S.modo="web";
+const BUCKET="documentos";
+const ES_RECUPERACION=/type=recovery/.test(location.hash||"");
+const WEB_CFG=(()=>{ const g=window.GH_CONFIG||{sb_publishable_c2Ej8vA-nM3WbqqREIBEFA_l6GpglY5}; let c={}; try{ c=JSON.parse(localStorage.getItem("gh-config")||"{}"); }catch(_){}
+  return {url:String(g.supabaseUrl||c.url||"").trim().replace(/\/+$/,""), key:String(g.supabaseKey||c.key||"").trim(), local:!g.supabaseUrl}; })();
+let sb=null;
+
+function PANTALLA(){ const st=S.status; if(st==="ok") return null;
+  const caja=(t,body)=>`<div class="card pad stack" style="max-width:440px;margin:32px auto"><h1 style="font-size:22px">${t}</h1>${body}</div>`;
+  if(st==="init") return `<div class="loading">Conectando…</div>`;
+  if(st==="setup") return caja("Conectar con Supabase",`<p class="muted" style="margin:0">Pega los datos de tu proyecto. Los encuentras en Supabase, en Project Settings → API.</p>
+    <form id="f-setup" class="stack"><div class="field"><label for="s-url" class="req">Project URL</label><input id="s-url" class="mono" required placeholder="https://xxxx.supabase.co"></div>
+    <div class="field"><label for="s-key" class="req">Publishable key (o anon key)</label><input id="s-key" class="mono" required placeholder="sb_publishable_…"></div>
+    <button class="btn pri" type="submit">Guardar y conectar</button></form>
+    <span class="muted" style="font-size:13px">Esto queda guardado solo en este navegador. Para que funcione en todos tus equipos, escribe los mismos datos en GH_CONFIG dentro de index.html.</span>`);
+  if(st==="login") return caja("Iniciar sesión",`<form id="f-login" class="stack">
+    <div class="field"><label for="l-email">Correo</label><input id="l-email" type="email" autocomplete="username" required value="${esc(S.loginEmail||"")}"></div>
+    <div class="field"><label for="l-pass">Contraseña</label><input id="l-pass" type="password" autocomplete="current-password" required></div>
+    <button class="btn pri" type="submit" id="l-btn">Entrar</button></form>
+    <div class="spread"><button class="btn ghost sm" data-web="olvide">Olvidé mi contraseña</button>${WEB_CFG.local?`<button class="btn ghost sm" data-web="reconfig">Cambiar proyecto</button>`:""}</div>
+    ${S.loginMsg?`<div class="banner ${S.loginMsgOk?"c-ok":"c-crit"}"><span>${esc(S.loginMsg)}</span></div>`:""}`);
+  if(st==="recovery") return caja("Nueva contraseña",`<form id="f-recovery" class="stack">
+    <div class="field"><label for="r-p1" class="req">Nueva contraseña</label><input id="r-p1" type="password" autocomplete="new-password" minlength="8" required></div>
+    <div class="field"><label for="r-p2" class="req">Repítela</label><input id="r-p2" type="password" autocomplete="new-password" minlength="8" required></div>
+    <button class="btn pri" type="submit">Guardar contraseña</button></form>${S.loginMsg?`<div class="banner c-crit"><span>${esc(S.loginMsg)}</span></div>`:""}`);
+  if(st==="noauth") return caja("Usuario sin autorización",`<p class="muted" style="margin:0">${esc(S.email||"")} inició sesión, pero no está en la lista de usuarios autorizados de Gestión Humana. Pide a Gerencia que lo agregue.</p><button class="btn" data-web="salir">Salir</button>`);
+  if(st==="error"||st==="nodb") return caja("No se pudo conectar",`<p class="muted" style="margin:0">${esc(S.errorMsg||"No se pudieron cargar los datos. Revisa tu conexión a internet.")}</p><div class="row"><button class="btn pri" data-web="reintentar">Reintentar</button>${WEB_CFG.local?`<button class="btn" data-web="reconfig">Cambiar proyecto</button>`:""}</div>`);
+  return null; }
+
+/* adaptador de datos: misma interfaz que usa la app (colecciones y documentos) */
+function crearDb(cli){ const T={}; ["empleados","cargos","config"].forEach(t=>T[t]={rows:new Map(),subs:[],cargado:false});
+  const err=e=>({code:/row-level security|permission|42501/i.test((e&&(e.message||e.code))||"")?"invalid_argument":/JWT|token/i.test((e&&e.message)||"")?"revoked":"unavailable",message:(e&&e.message)||""});
+  function aviso(t){ for(const s of T[t].subs){ try{ if(s.col) s.cb({docs:[...T[t].rows].map(([id,d])=>({id,exists:true,data:()=>d}))}); else { const d=T[t].rows.get(s.id); s.cb({id:s.id,exists:!!d,data:()=>d}); } }catch(e){ console.error(e); } } }
+  async function cargar(t){ const out=new Map(); let desde=0; for(;;){ const {data,error}=await cli.from(t).select("id,data").range(desde,desde+999); if(error) throw err(error); data.forEach(r=>out.set(r.id,r.data||{})); if(data.length<1000) break; desde+=1000; }
+    T[t].rows=out; T[t].cargado=true; aviso(t); }
+  const sub=(t,s,ecb)=>{ T[t].subs.push(s); if(T[t].cargado) aviso(t); else if(!T[t].cargando){ T[t].cargando=cargar(t).catch(e=>{ T[t].cargando=null; if(ecb) ecb(e); }); } return ()=>{ T[t].subs=T[t].subs.filter(x=>x!==s); }; };
+  return { recargar:t=>cargar(t),
+    collection:t=>({ onSnapshot:(cb,ecb)=>sub(t,{col:true,cb},ecb) }),
+    doc:path=>{ const [t,id]=path.split("/"); return {
+      onSnapshot:(cb,ecb)=>sub(t,{id,cb},ecb),
+      async set(body){ const {error}=await cli.from(t).upsert({id,data:body,actualizado:new Date().toISOString()}); if(error) throw err(error); T[t].rows.set(id,body); aviso(t); },
+      async delete(){ const {error}=await cli.from(t).delete().eq("id",id); if(error) throw err(error); T[t].rows.delete(id); aviso(t); } }; } }; }
+
+/* adaptador de archivos: bucket privado de Supabase Storage */
+function crearAssets(cli){ const B=()=>cli.storage.from(BUCKET);
+  const err=e=>{ const m=(e&&e.message)||""; return {code:/exceed|too large|size/i.test(m)?"too_large":/mime|type/i.test(m)?"unsupported_type":/row-level|security|unauthor/i.test(m)?"not_granted":/quota/i.test(m)?"quota_or_state":"upstream_error",message:m}; };
+  return {
+    async upload(blob,opts={}){ const type=opts.type||blob.type||"application/octet-stream"; const id=(uid()+uid()+uid()).slice(0,32);
+      const {error}=await B().upload(id,blob,{contentType:type,upsert:false}); if(error) throw err(error); return {id,url:"",sizeBytes:blob.size,contentType:type}; },
+    async delete(id){ const {error}=await B().remove([id]); if(error) throw err(error); return {deleted:true}; },
+    async list(){ let todo=[],off=0; for(;;){ const {data,error}=await B().list("",{limit:1000,offset:off}); if(error) throw err(error); todo=todo.concat(data||[]); if(!data||data.length<1000) break; off+=1000; }
+      const archivos=todo.filter(o=>o&&o.id); return {assets:[],usage:{files:archivos.length,bytes:archivos.reduce((s,o)=>s+((o.metadata&&o.metadata.size)||0),0),maxFiles:0,maxBytes:1073741824}}; } }; }
+
+const descargasNavegador={ async save({filename,data}){ const blob=data instanceof Blob?data:new Blob([data]); const url=URL.createObjectURL(blob);
+  const nombreSeguro=String(filename||"archivo").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^\w .()-]/g,"_"); const a=document.createElement("a"); a.href=url; a.download=nombreSeguro; a.rel="noopener"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),60000); return {status:"saved"}; } };
+
+function ponerUsuario(){ const w=$(".top .wrap"); if(!w||$("#web-user")) return; const d=document.createElement("div"); d.id="web-user"; d.className="row"; d.style.gap="8px";
+  d.innerHTML=`<span style="font-size:13px;color:var(--head-muted)" class="hide-sm">${esc(S.email||"")}</span><button class="btn sm" data-web="salir" style="background:transparent;color:var(--head-fg);border-color:var(--head-muted)">Salir</button>`; w.appendChild(d); }
+function ocultarUi(oculto){ document.querySelectorAll("#nav, .top [data-act='nuevo']").forEach(x=>x.hidden=oculto); }
+
+const pendientes={}; function recargarLuego(t){ if(!S.db) return; clearTimeout(pendientes[t]); pendientes[t]=setTimeout(()=>S.db.recargar(t).catch(()=>{}),700); }
+async function entrar(session){
+  S.email=session.user.email; const {data:ok,error}=await sb.rpc("es_autorizado");
+  if(error){ S.status="error"; S.errorMsg="No se pudo verificar tu usuario ("+error.message+"). Revisa que el script de configuración se haya ejecutado en Supabase."; ponerUsuario(); return render(); }
+  if(!ok){ S.status="noauth"; ponerUsuario(); return render(); }
+  S.status="ok"; ocultarUi(false); ponerUsuario();
+  S.db=crearDb(sb); S.assets=crearAssets(sb); S.downloads=descargasNavegador;
+  S.blob=async id=>{ const {data,error}=await sb.storage.from(BUCKET).download(id); if(error) throw error; return data; };
+  render();
+  S.db.collection("empleados").onSnapshot(snap=>{ S.emps=snap.docs.map(d=>({id:d.id,...d.data()})); S.loaded=true; if(S.dirty){ S.stale=true; return; } render(); },
+    e=>{ S.status="error"; S.errorMsg="No se pudieron cargar los expedientes ("+(e.message||e.code)+")."; render(); });
+  S.db.collection("cargos").onSnapshot(snap=>{ S.cargos=snap.docs.map(d=>({id:d.id,...d.data()})); if(S.dirty){ S.stale=true; return; } if(S.loaded) render(); },()=>{});
+  S.db.doc("config/general").onSnapshot(s=>{ if(s.exists) S.config={...DEF,...s.data()}; if(!S.dirty&&S.loaded) render(); },()=>{});
+  S.assets.list().then(r=>{ S.usage=r.usage; if(S.view==="ajustes"&&!S.dirty) render(); }).catch(()=>{});
+  try{ const ch=sb.channel("gh-cambios"); ["empleados","cargos","config"].forEach(t=>ch.on("postgres_changes",{event:"*",schema:"public",table:t},()=>recargarLuego(t))); ch.subscribe(); }catch(_){}
+  window.addEventListener("focus",()=>{ ["empleados","cargos"].forEach(recargarLuego); }); }
+
+async function arrancarWeb(){ ocultarUi(true);
+  if(!WEB_CFG.url||!WEB_CFG.key){ S.status="setup"; return render(); }
+  if(!window.supabase||!window.supabase.createClient){ S.status="error"; S.errorMsg="No cargó la librería de conexión. Revisa tu internet y recarga la página."; return render(); }
+  try{ sb=window.supabase.createClient(WEB_CFG.url,WEB_CFG.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:"implicit"}}); }
+  catch(e){ S.status="error"; S.errorMsg="Los datos de conexión no son válidos. Revisa la Project URL y la key."; return render(); }
+  sb.auth.onAuthStateChange(ev=>{ if(ev==="PASSWORD_RECOVERY"){ S.status="recovery"; render(); } if(ev==="SIGNED_OUT"&&S.status==="ok") location.reload(); });
+  const {data,error}=await sb.auth.getSession(); if(error){ S.status="login"; return render(); }
+  if(ES_RECUPERACION&&data.session){ S.status="recovery"; return render(); }
+  if(!data.session){ S.status="login"; return render(); }
+  await entrar(data.session); }
+
+document.addEventListener("submit",async ev=>{ const f=ev.target; if(!["f-login","f-setup","f-recovery"].includes(f.id)) return; ev.preventDefault();
+  if(f.id==="f-setup"){ try{ localStorage.setItem("gh-config",JSON.stringify({url:$("#s-url").value.trim(),key:$("#s-key").value.trim()})); }catch(_){ return toast("Este navegador no permite guardar la configuración."); } return location.reload(); }
+  if(f.id==="f-login"){ const btn=$("#l-btn"); btn.disabled=true; btn.textContent="Entrando…"; S.loginEmail=$("#l-email").value.trim();
+    const {data,error}=await sb.auth.signInWithPassword({email:S.loginEmail,password:$("#l-pass").value});
+    if(error){ S.loginMsg=/invalid/i.test(error.message)?"Correo o contraseña incorrectos.":/confirm/i.test(error.message)?"Ese correo aún no está confirmado en Supabase.":"No se pudo iniciar sesión: "+error.message; S.loginMsgOk=false; return render(); }
+    S.loginMsg=""; return entrar(data.session); }
+  if(f.id==="f-recovery"){ const p1=$("#r-p1").value, p2=$("#r-p2").value; if(p1!==p2){ S.loginMsg="Las contraseñas no coinciden."; return render(); }
+    const {error}=await sb.auth.updateUser({password:p1}); if(error){ S.loginMsg="No se pudo cambiar: "+error.message; return render(); }
+    S.loginMsg=""; toast("Contraseña actualizada"); try{ history.replaceState(null,"",location.pathname); }catch(_){} const {data}=await sb.auth.getSession(); return data.session?entrar(data.session):(S.status="login",render()); } });
+document.addEventListener("click",async ev=>{ const el=ev.target.closest("[data-web]"); if(!el) return; const a=el.dataset.web;
+  if(a==="salir"){ try{ await sb.auth.signOut(); }catch(_){} return location.reload(); }
+  if(a==="reintentar") return location.reload();
+  if(a==="reconfig"){ try{ localStorage.removeItem("gh-config"); }catch(_){} return location.reload(); }
+  if(a==="olvide"){ const em=($("#l-email")||{}).value; if(!em){ S.loginMsg="Escribe tu correo arriba y vuelve a pulsar “Olvidé mi contraseña”."; S.loginMsgOk=false; return render(); }
+    S.loginEmail=em.trim(); const {error}=await sb.auth.resetPasswordForEmail(S.loginEmail,{redirectTo:location.origin+location.pathname});
+    S.loginMsg=error?"No se pudo enviar el correo: "+error.message:"Te enviamos un correo con el enlace para crear una nueva contraseña."; S.loginMsgOk=!error; render(); } });
+arrancarWeb();
+
+})();
+</script>
+</body>
+</html>
