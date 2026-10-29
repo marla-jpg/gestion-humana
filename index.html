@@ -185,6 +185,7 @@ legend{font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--
     <button data-act="nav" data-v="panel">Panel</button>
     <button data-act="nav" data-v="empleados">Empleados</button>
     <button data-act="nav" data-v="cargos">Cargos y KPI</button>
+    <button data-act="nav" data-v="disciplinario">Disciplinario</button>
     <button data-act="nav" data-v="informes">Informes</button>
     <button data-act="nav" data-v="ajustes">Ajustes</button>
   </nav>
@@ -216,15 +217,15 @@ const DEF = {smmlv:1750905, auxTransporte:249095, diasAlerta:45, empresa:"Alimen
 const AREAS = ["Producción","Calidad","Compras e Inventarios","Contabilidad y Finanzas","Comercial","Mercadeo","Logística y Despachos","Mantenimiento","Administración","Gerencia"];
 const TIPOS_CONTRATO = ["Término fijo","Término indefinido","Obra o labor","Aprendizaje SENA","Prestación de servicios"];
 const DOCS_REQ = ["Hoja de vida","Copia de cédula","Certificados de estudio","Referencias verificadas","Examen médico de ingreso","Afiliación EPS","Afiliación AFP","Afiliación ARL","Afiliación caja de compensación","Certificado manipulación de alimentos","Inducción SST","Autorización tratamiento de datos","Manual de funciones firmado"];
-const FRECUENCIAS = ["Mensual","Bimestral","Trimestral","Semestral","Anual"];
-const PASO_FREQ = {Mensual:1,Bimestral:2,Trimestral:3,Semestral:6,Anual:12};
-const TIPOS_NOV = ["Vacaciones","Incapacidad","Licencia","Permiso","Llamado de atención","Descargos","Capacitación","Examen médico ocupacional","Entrega de dotación","Entrega de EPP","Cambio salarial o de cargo","Otro"];
+const FRECUENCIAS = ["Diaria","Semanal","Mensual","Bimestral","Trimestral","Semestral","Anual"];
+const PASO_FREQ = {Diaria:1,Semanal:1,Mensual:1,Bimestral:2,Trimestral:3,Semestral:6,Anual:12};
+const TIPOS_NOV = ["Vacaciones","Incapacidad","Licencia","Permiso","Suspensión disciplinaria","Capacitación","Examen médico ocupacional","Entrega de dotación","Entrega de EPP","Cambio salarial o de cargo","Otro"];
 const MOTIVOS = ["Renuncia voluntaria","Vencimiento del plazo pactado","Terminación con justa causa","Terminación sin justa causa","Mutuo acuerdo","Fin de obra o labor","Periodo de prueba no superado","Otro"];
 const CHECK_RETIRO = [["carta","Carta de renuncia o terminación"],["examen","Examen médico de egreso"],["paz","Paz y salvo"],["liq","Liquidación firmada"],["cert","Certificado laboral entregado"],["ss","Retiro de seguridad social"]];
 const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 
 const S = {view:"panel", emps:[], loaded:false, config:{...DEF}, db:null, user:null, assets:null, downloads:null, status:"init",
-  sel:null, ftab:"ficha", q:"", fArea:"", fEstado:"activo", fTipo:"", rep:"planta", rp:{dias:90, desde:"", hasta:"", tipo:"", anio:new Date().getFullYear(), mes:new Date().getMonth()}, dirty:false, stale:false, edit:null, importRows:null, usage:null, cargos:[], cargoSel:null, cargoNuevo:"", kpiPer:""};
+  sel:null, ftab:"ficha", q:"", fArea:"", fEstado:"activo", fTipo:"", rep:"planta", rp:{dias:90, desde:"", hasta:"", tipo:"", anio:new Date().getFullYear(), mes:new Date().getMonth()}, dirty:false, stale:false, edit:null, discEdit:null, discNuevo:null, discFiltro:"abiertos", importRows:null, usage:null, cargos:[], cargoSel:null, cargoNuevo:"", kpiPer:""};
 { const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()-1); S.kpiPer=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; }
 
 /* ---------- utilidades ---------- */
@@ -287,6 +288,7 @@ function alertasDe(e){ const out=[], t=today(), cfg=S.config;
   for(const d of (e.documentos||[])) if(d.vence){ const dd=diff(t,toD(d.vence)); if(dd<0) out.push({n:"crit",tipo:`${d.categoria} vencido`,fecha:d.vence,txt:`Venció el ${fmtD(d.vence)}.`}); else if(dd<=30) out.push({n:"warn",tipo:`${d.categoria} por vencer`,fecha:d.vence,txt:`Vence el ${fmtD(d.vence)} (faltan ${dd} días).`}); }
   for(const n of (e.novedades||[])) if(n.tipo==="Vacaciones"&&Number(n.diasComp)>(Number(n.dias)||0)) out.push({n:"warn",tipo:"Vacaciones pagadas en dinero por encima de la mitad",fecha:n.desde,txt:`El ${fmtD(n.desde)} se pagaron ${n.diasComp} días en dinero y se disfrutaron ${Number(n.dias)||0}. Con el contrato vigente solo se puede compensar hasta la mitad, por acuerdo escrito.`});
   const v=vacaciones(e); if(v.saldo>=30) out.push({n:"warn",tipo:"Vacaciones acumuladas",fecha:"",txt:`Tiene ${v.saldo.toFixed(1)} días hábiles pendientes (dos periodos o más).`});
+  out.push(...alertasDisc(e));
   return out; }
 const RANK={crit:0,warn:1,info:2};
 function todasAlertas(){ const a=[]; for(const e of activos()) for(const x of alertasDe(e)) a.push({...x,e}); return a.sort((x,y)=>RANK[x.n]-RANK[y.n]||(x.fecha||"9").localeCompare(y.fecha||"9")); }
@@ -308,9 +310,16 @@ function cumpl(k,v){ const m=Number(k.meta), x=Number(v); if(v===""||v==null||is
 const semaforo = p => p==null?"c-mute": p>=100?"c-ok": p>=80?"c-warn":"c-crit";
 const pctTxt = p => p==null?"—":`${Math.round(Math.min(p,150))} %`;
 const mesTxt = p => { if(!p) return "—"; const [y,m]=p.split("-"); return `${MESES[+m-1]||"?"} ${y}`; };
+const esCorta = k => k&&(k.frecuencia==="Diaria"||k.frecuencia==="Semanal");
+function semanaIso(d){ const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const dia=t.getUTCDay()||7; t.setUTCDate(t.getUTCDate()+4-dia); const y=t.getUTCFullYear(); const w=Math.ceil(((t-Date.UTC(y,0,1))/86400000+1)/7); return `${y}-W${String(w).padStart(2,"0")}`; }
+function lunesDeSemana(p){ const m=String(p).match(/^(\d{4})-W(\d{2})$/); if(!m) return null; const j4=new Date(Date.UTC(+m[1],0,4)); const dia=j4.getUTCDay()||7; const l=new Date(j4); l.setUTCDate(j4.getUTCDate()-dia+1+(+m[2]-1)*7); return new Date(l.getUTCFullYear(),l.getUTCMonth(),l.getUTCDate(),12); }
+function mesDePeriodo(p){ if(!p) return ""; const l=lunesDeSemana(p); return l?iso(addDays(l,3)).slice(0,7):String(p).slice(0,7); }
+const ordenPeriodo = p => { const l=lunesDeSemana(p); return l?iso(l):(String(p).length===7?p+"-01":String(p)); };
+const diaCorto = d => `${d.getDate()} ${MESES[d.getMonth()].slice(0,3)}`;
+function periodoTxt(p){ if(!p) return "—"; if(/^\d{4}-\d{2}-\d{2}$/.test(p)) return fmtD(p); const l=lunesDeSemana(p); if(l) return `Semana ${+p.split("W")[1]} · ${diaCorto(l)} a ${diaCorto(addDays(l,6))}`; return mesTxt(p); }
 function tocaMedir(k,per){ const paso=PASO_FREQ[k.frecuencia]||1; return ((+per.split("-")[1]-1)%paso)===paso-1 || paso===1; }
-function medicionesDe(c,kId,per){ return (c.mediciones||[]).filter(m=>m.kpiId===kId&&(!per||m.periodo===per)); }
-function ultimoPeriodo(c){ const ps=(c.mediciones||[]).map(m=>m.periodo).sort(); return ps[ps.length-1]||""; }
+function medicionesDe(c,kId,per){ return (c.mediciones||[]).filter(m=>m.kpiId===kId&&(!per||mesDePeriodo(m.periodo)===per)); }
+function ultimoPeriodo(c){ const ps=(c.mediciones||[]).map(m=>mesDePeriodo(m.periodo)).sort(); return ps[ps.length-1]||""; }
 function kpiPendientes(per){ let n=0; for(const c of S.cargos){ if(!personasCargo(c).length) continue; for(const k of (c.kpis||[])) if(tocaMedir(k,per)&&!medicionesDe(c,k.id,per).length) n++; } return n; }
 function errMsg(err){ const c=err&&err.code; return ({quota_exceeded:"Se llenó el espacio de la base de datos. Borra registros antiguos.",invalid_argument:"No tienes permiso para guardar en esta app o el dato no es válido.",resource_exhausted:"Demasiadas operaciones seguidas. Espera un momento.",too_large:"El archivo supera 20 MB. Comprímelo o divídelo.",unsupported_type:"Solo se aceptan PDF, JPG, PNG o WEBP.",quota_or_state:"Se llenó el espacio de archivos de la app.",rate_limited:"Demasiadas cargas seguidas. Espera un momento.",not_granted:"Esta vista no permite esa acción."})[c] || "No se pudo completar. Revisa la conexión e intenta de nuevo."; }
 async function subir(file){ if(!S.assets) throw {code:"not_granted"}; const ext=(file.name.split(".").pop()||"").toLowerCase();
@@ -345,13 +354,13 @@ async function verPdf(cont,a){ cont.innerHTML=`<div class="loading">Abriendo doc
   catch(_){ if(cont.isConnected) cont.innerHTML=`<div class="empty"><b>No se pudo mostrar el documento aquí</b>Usa “Descargar” para abrirlo en tu equipo.</div>`; } }
 
 /* ---------- vistas ---------- */
-function setView(v,keepDirty){ S.view=v; S.edit=null; if(!keepDirty) S.dirty=false; try{ if(["panel","empleados","cargos","informes","ajustes"].includes(v)) history.replaceState(null,"","#"+v); }catch(_){} render(); window.scrollTo(0,0); }
+function setView(v,keepDirty){ S.view=v; S.edit=null; if(!keepDirty) S.dirty=false; try{ if(["panel","empleados","cargos","disciplinario","informes","ajustes"].includes(v)) history.replaceState(null,"","#"+v); }catch(_){} render(); window.scrollTo(0,0); }
 function render(){ document.querySelectorAll("#nav button").forEach(b=>b.setAttribute("aria-current", String(b.dataset.v===S.view || (S.view==="ficha"&&b.dataset.v==="empleados") || (S.view==="cargo"&&b.dataset.v==="cargos"))));
   fillLists(); const m=$("#main");
   if(typeof PANTALLA==="function"){ const h=PANTALLA(); if(h!=null){ m.innerHTML=h; return; } }
   if(S.status==="nodb"){ m.innerHTML=`<div class="card empty"><b>Este espacio es privado</b>Los expedientes de Gestión Humana de ASPM solo los ven el propietario y las personas que él invite como Editor.</div>`; return; }
   if(!S.loaded){ m.innerHTML=`<div class="loading">Abriendo los expedientes…</div>`; return; }
-  const v=S.view; m.innerHTML = v==="panel"?vPanel(): v==="empleados"?vLista(): v==="ficha"?vFicha(): v==="nuevo"?vNuevo(): v==="cargos"?vCargos(): v==="cargo"?vCargo(): v==="informes"?vInformes(): vAjustes();
+  const v=S.view; m.innerHTML = v==="panel"?vPanel(): v==="empleados"?vLista(): v==="ficha"?vFicha(): v==="nuevo"?vNuevo(): v==="cargos"?vCargos(): v==="cargo"?vCargo(): v==="disciplinario"?vDisciplinario(): v==="informes"?vInformes(): vAjustes();
   S.stale=false; }
 function fillLists(){ const areas=new Set(AREAS), cargos=new Set(); S.emps.forEach(e=>{ if(e.area) areas.add(e.area); if(e.cargo) cargos.add(e.cargo); }); S.cargos.forEach(c=>{ if(c.nombre) cargos.add(c.nombre); if(c.area) areas.add(c.area); });
   $("#dl-areas").innerHTML=[...areas].map(a=>`<option>${esc(a)}</option>`).join(""); $("#dl-cargos").innerHTML=[...cargos].sort().map(a=>`<option>${esc(a)}</option>`).join(""); }
@@ -382,6 +391,7 @@ function vPanel(){ const act=activos(), al=todasAlertas(), t=today();
       <div class="card pad stack"><h3>Próxima dotación</h3><div><b style="font-size:20px">${fmtD(prox)}</b><div class="muted" style="font-size:14px">${dot.length} ${dot.length===1?"persona pendiente":"personas pendientes"} de entrega (salario hasta 2 SMMLV y 3 meses de antigüedad)</div></div>${dot.length?`<div class="muted" style="font-size:14px">${dot.slice(0,8).map(e=>esc(nombre(e))).join(", ")}${dot.length>8?"…":""}</div>`:""}</div>
       ${(()=>{ const nombres=[...new Set(act.map(e=>norm(e.cargo)).filter(Boolean))]; const conM=nombres.filter(n=>{ const c=S.cargos.find(x=>norm(x.nombre)===n); return c&&(c.manual||(c.funciones||[]).length); }).length; const pend=kpiPendientes(S.kpiPer);
         return `<div class="card pad stack" data-act="nav" data-v="cargos" style="cursor:pointer"><h3>Manuales y KPI</h3><div class="kv"><dt>Cargos con manual</dt><dd class="num">${conM} de ${nombres.length}</dd><dt>KPI sin medir (${esc(mesTxt(S.kpiPer))})</dt><dd class="num" style="color:${pend?"var(--warn)":"inherit"}">${pend}</dd></div></div>`; })()}
+      ${(()=>{ const ab=procesosAbiertos(); return `<div class="card pad stack" data-act="nav" data-v="disciplinario" style="cursor:pointer"><h3>Disciplinario</h3><div class="kv"><dt>Procesos abiertos</dt><dd class="num" style="color:${ab.length?"var(--warn)":"inherit"}">${ab.length}</dd></div></div>`; })()}
       <div class="card pad stack"><h3>Personal por área</h3><div class="bars">${Object.entries(porArea).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<div class="barrow"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(k)}">${esc(k)}</span><span class="track"><span class="fill" style="display:block;width:${n/maxA*100}%"></span></span><span class="n">${n}</span></div>`).join("")}</div>
         <hr class="sep"><div class="row">${Object.entries(porTipo).map(([k,n])=>`<span class="chip c-info">${esc(k)} · ${n}</span>`).join("")}</div></div>
       <div class="card pad stack"><h3>Cumpleaños de ${MESES[t.getMonth()]}</h3>${cumple.length?`<div class="kv">${cumple.map(e=>`<dt>${esc(nombre(e))}</dt><dd class="num">${toD(e.fechaNacimiento).getDate()} ${MESES[t.getMonth()].slice(0,3)}</dd>`).join("")}</div>`:`<span class="muted">Nadie cumple años este mes.</span>`}</div>
@@ -430,8 +440,8 @@ function vNuevo(){ return `<div class="stack"><div class="row"><button class="bt
 
 function vFicha(){ const e=S.emps.find(x=>x.id===S.sel); if(!e) return `<div class="card empty"><b>Este empleado ya no existe</b><button class="btn" data-act="nav" data-v="empleados">Volver a la lista</button></div>`;
   const c=vigente(e), v=vacaciones(e), al=alertasDe(e), fp=finPrueba(e);
-  const tabs=[["ficha","Ficha"],["contratos","Contratos",ordenC(e).length],["documentos","Documentos",(e.documentos||[]).length],["novedades","Novedades",(e.novedades||[]).length],["funciones","Funciones y KPI"],["retiro",e.estado==="retirado"?"Retiro":"Retiro"]];
-  const body = S.ftab==="contratos"?tContratos(e): S.ftab==="documentos"?tDocumentos(e): S.ftab==="novedades"?tNovedades(e): S.ftab==="retiro"?tRetiro(e): S.ftab==="funciones"?tFunciones(e): tFicha(e);
+  const tabs=[["ficha","Ficha"],["contratos","Contratos",ordenC(e).length],["documentos","Documentos",(e.documentos||[]).length],["novedades","Novedades",(e.novedades||[]).length],["funciones","Funciones y KPI"],["disciplinario","Disciplinario",(e.disciplinarios||[]).length],["retiro",e.estado==="retirado"?"Retiro":"Retiro"]];
+  const body = S.ftab==="contratos"?tContratos(e): S.ftab==="documentos"?tDocumentos(e): S.ftab==="novedades"?tNovedades(e): S.ftab==="retiro"?tRetiro(e): S.ftab==="funciones"?tFunciones(e): S.ftab==="disciplinario"?tDisciplinario(e): tFicha(e);
   return `<div class="stack"><div class="row"><button class="btn ghost" data-act="nav" data-v="empleados">← Empleados</button>${e.ejemplo?`<span class="chip c-warn">Ejemplo</span>`:""}</div>
   <div class="ficha"><aside class="card pad stack side">
     <div class="who"><span class="av lg">${esc(iniciales(e))}</span><div style="min-width:0"><h2>${esc(nombre(e))}</h2><div class="muted">${esc(e.cargo||"")}</div></div></div>
@@ -492,7 +502,7 @@ function tNovedades(e){ const v=vacaciones(e); const list=(e.novedades||[]).slic
 function novForm(e){ const ed=S.edit&&S.edit.t==="nov"?(e.novedades||[]).find(x=>x.id===S.edit.id):null; const n=ed||{tipo:"Vacaciones",desde:iso(today())}; const vac=n.tipo==="Vacaciones"; const h=vac?"":"hidden";
   const val=x=>x===undefined||x===null?"":esc(x);
   return `<form class="addbox stack" data-form="novedad" ${ed?`style="outline:2px solid var(--accent)"`:""}><h3>${ed?"Editar novedad":"Registrar novedad"}</h3><div class="fgrid">
-    <div class="field"><label for="v-tipo">Tipo</label><select id="v-tipo" name="tipo">${TIPOS_NOV.map(t=>`<option ${t===n.tipo?"selected":""}>${t}</option>`).join("")}</select></div>
+    <div class="field"><label for="v-tipo">Tipo</label><select id="v-tipo" name="tipo">${[...new Set([...TIPOS_NOV,n.tipo].filter(Boolean))].map(t=>`<option ${t===n.tipo?"selected":""}>${esc(t)}</option>`).join("")}</select></div>
     <div class="field"><label for="v-desde" class="req">Desde</label><input id="v-desde" name="desde" type="date" required value="${val(n.desde)}"></div>
     <div class="field"><label for="v-hasta">Hasta</label><input id="v-hasta" name="hasta" type="date" value="${val(n.hasta)}"></div>
     <div class="field"><label for="v-dias">Días</label><input id="v-dias" class="mono" name="dias" type="number" min="0" step="0.5" value="${val(n.dias)}"><span class="hint">En vacaciones, días hábiles disfrutados.</span></div>
@@ -519,7 +529,10 @@ const metaTxt = k => `${k.sentido==="menor"?"≤":"≥"} ${k.meta===""?"—":Num
 const valTxt = (k,v) => `${Number(v).toLocaleString("es-CO")} ${k.unidad||""}`.trim();
 const persNombre = id => { if(!id) return "Todo el cargo"; const e=S.emps.find(x=>x.id===id); return e?nombre(e):"Persona retirada"; };
 function resultadoCelda(c,k,per,empId){ let ms=medicionesDe(c,k.id,per); if(empId!==undefined) ms=ms.filter(m=>!m.empleadoId||m.empleadoId===empId);
-  if(!ms.length) return tocaMedir(k,per)?`<span class="chip c-warn">Sin medir</span>`:`<span class="muted" style="font-size:13px">No toca este mes</span>`;
+  if(!ms.length) return tocaMedir(k,per)?`<span class="chip c-warn">${esCorta(k)?"Sin registros":"Sin medir"}</span>`:`<span class="muted" style="font-size:13px">No toca este mes</span>`;
+  if(esCorta(k)){ const grupos={}; ms.forEach(m=>(grupos[m.empleadoId||""]=grupos[m.empleadoId||""]||[]).push(m)); const u=k.frecuencia==="Diaria"?["día","días"]:["semana","semanas"];
+    return `<div style="display:grid;gap:6px">${Object.entries(grupos).map(([emp,g])=>{ const prom=g.reduce((a,m)=>a+Number(m.valor),0)/g.length; const p=cumpl(k,prom); const ok=g.filter(m=>(cumpl(k,m.valor)||0)>=100).length;
+      return `<div><div class="row" style="gap:6px"><span class="num">${esc(valTxt(k,Math.round(prom*100)/100))}</span><span class="chip ${semaforo(p)}">${pctTxt(p)}</span>${empId===undefined&&emp?`<small class="muted">${esc(persNombre(emp))}</small>`:""}</div><small class="muted">Promedio de ${g.length} ${g.length===1?u[0]:u[1]} · cumplió ${ok} de ${g.length}</small></div>`; }).join("")}</div>`; }
   return `<div style="display:grid;gap:4px">${ms.map(m=>{ const p=cumpl(k,m.valor); return `<div class="row" style="gap:6px"><span class="num">${esc(valTxt(k,m.valor))}</span><span class="chip ${semaforo(p)}">${pctTxt(p)}</span>${empId===undefined&&m.empleadoId?`<small class="muted">${esc(persNombre(m.empleadoId))}</small>`:""}</div>`; }).join("")}</div>`; }
 
 function tFunciones(e){ const c=cargoDe(e);
@@ -541,11 +554,15 @@ function vCargos(){ const act=activos(); const sinFicha=[...new Set(act.map(e=>e
   ${sinFicha.length?`<div class="card pad stack"><h3>Cargos con personal y sin manual de funciones</h3><div class="row">${sinFicha.map(n=>`<button class="btn sm" data-act="nuevo-cargo" data-n="${esc(n)}">+ ${esc(n)}</button>`).join("")}</div></div>`:""}
   <div class="card tablewrap">${list.length?`<table><thead><tr><th>Cargo</th><th class="hide-sm">Área</th><th>Personas</th><th>Manual</th><th>KPI</th><th class="hide-sm">Última medición</th></tr></thead><tbody>${list.map(fila).join("")}</tbody></table>`:`<div class="empty"><b>Aún no hay cargos documentados</b>Crea el manual de funciones de cada cargo: objetivo, funciones, requisitos, el PDF firmado por Gerencia y sus indicadores.</div>`}</div></div>`; }
 
+function campoPeriodo(k){ const f=(k&&k.frecuencia)||"Mensual";
+  if(f==="Diaria") return `<label for="m-per" class="req">Día</label><input id="m-per" name="periodo" type="date" required value="${iso(today())}">`;
+  if(f==="Semanal") return `<label for="m-per" class="req">Semana</label><input id="m-per" name="periodo" type="date" required value="${iso(today())}"><span class="hint">Elige cualquier día de esa semana.</span>`;
+  return `<label for="m-per" class="req">Mes</label><input id="m-per" name="periodo" type="month" required value="${S.kpiPer}">`; }
 function vCargo(){ const isNew=S.cargoSel==="__nuevo";
   const c=isNew?{nombre:S.cargoNuevo,area:(S.emps.find(e=>norm(e.cargo)===norm(S.cargoNuevo))||{}).area||"",kpis:[],mediciones:[]}:S.cargos.find(x=>x.id===S.cargoSel);
   if(!c) return `<div class="card empty"><b>Este cargo ya no existe</b><button class="btn" data-act="nav" data-v="cargos">Volver a cargos</button></div>`;
   const per=personasCargo(c), kp=c.kpis||[]; const ta=(k,l,rows,hint)=>`<div class="field wide"><label for="cg-${k}">${l}</label><textarea id="cg-${k}" name="${k}" rows="${rows}">${esc(c[k]||"")}</textarea>${hint?`<span class="hint">${hint}</span>`:""}</div>`;
-  const hist=(c.mediciones||[]).slice().sort((a,b)=>b.periodo.localeCompare(a.periodo)).slice(0,36);
+  const hist=(c.mediciones||[]).slice().sort((a,b)=>ordenPeriodo(b.periodo).localeCompare(ordenPeriodo(a.periodo))).slice(0,60);
   return `<div class="stack"><div class="row"><button class="btn ghost" data-act="nav" data-v="cargos">← Cargos y KPI</button></div>
   <div class="spread"><div><h1>${isNew?(c.nombre?`Manual de ${esc(c.nombre)}`:"Nuevo cargo"):esc(c.nombre)}</h1>${per.length?`<div class="row" style="margin-top:6px">${per.map(e=>`<button class="chip c-info" style="border:0;cursor:pointer" data-act="ver" data-id="${e.id}">${esc(nombre(e))}</button>`).join("")}</div>`:`<span class="muted">Nadie activo tiene este cargo.</span>`}</div>
     ${isNew?"":`<button class="btn sm" data-act="cargo-xlsx">Descargar en Excel</button>`}</div>
@@ -567,19 +584,132 @@ function vCargo(){ const isNew=S.cargoSel==="__nuevo";
       <div class="field"><label for="k-meta" class="req">Meta</label><input id="k-meta" class="mono" name="meta" type="number" step="any" required></div>
       <div class="field"><label for="k-uni">Unidad</label><input id="k-uni" name="unidad" list="dl-unidades" placeholder="%"><datalist id="dl-unidades"><option>%</option><option>días</option><option>horas</option><option>kg</option><option>unidades</option><option>pedidos</option><option>$</option><option>casos</option></datalist></div>
       <div class="field"><label for="k-sen">Se cumple cuando el resultado es</label><select id="k-sen" name="sentido"><option value="mayor">Igual o mayor a la meta</option><option value="menor">Igual o menor a la meta</option></select></div>
-      <div class="field"><label for="k-frec">Frecuencia</label><select id="k-frec" name="frecuencia">${FRECUENCIAS.map(x=>`<option>${x}</option>`).join("")}</select></div>
-    </div><div class="formfoot" style="border:0;padding:0"><button class="btn pri" type="submit">Agregar indicador</button></div></form></div>
+      <div class="field"><label for="k-frec">Frecuencia</label><select id="k-frec" name="frecuencia">${FRECUENCIAS.map(x=>`<option ${x==="Mensual"?"selected":""}>${x}</option>`).join("")}</select></div>
+    </div><span class="muted" style="font-size:13px">En los indicadores diarios y semanales la meta es por día o por semana. En la vista del mes se muestra el promedio y cuántas veces se cumplió.</span><div class="formfoot" style="border:0;padding:0"><button class="btn pri" type="submit">Agregar indicador</button></div></form></div>
   ${kp.length?`<div class="card pad stack"><h2>Registrar resultados</h2>
     <form class="addbox stack" data-form="medicion"><div class="fgrid">
-      <div class="field"><label for="m-kpi">Indicador</label><select id="m-kpi" name="kpiId">${kp.map(k=>`<option value="${k.id}">${esc(k.nombre)} (${esc(metaTxt(k))})</option>`).join("")}</select></div>
+      <div class="field"><label for="m-kpi">Indicador</label><select id="m-kpi" name="kpiId">${kp.map(k=>`<option value="${k.id}" data-frec="${esc(k.frecuencia||"Mensual")}">${esc(k.nombre)} · ${esc((k.frecuencia||"Mensual").toLowerCase())} (${esc(metaTxt(k))})</option>`).join("")}</select></div>
       <div class="field"><label for="m-emp">Medido a</label><select id="m-emp" name="empleadoId"><option value="">Todo el cargo</option>${per.map(e=>`<option value="${e.id}">${esc(nombre(e))}</option>`).join("")}</select></div>
-      <div class="field"><label for="m-per" class="req">Periodo</label><input id="m-per" name="periodo" type="month" required value="${S.kpiPer}"></div>
+      <div class="field" id="m-per-box">${campoPeriodo(kp[0])}</div>
       <div class="field"><label for="m-val" class="req">Resultado</label><input id="m-val" class="mono" name="valor" type="number" step="any" required></div>
       <div class="field wide"><label for="m-nota">Observación</label><input id="m-nota" name="nota" placeholder="Ej.: paro de 2 días por mantenimiento del autoclave"></div>
-    </div><div class="formfoot" style="border:0;padding:0"><button class="btn pri" type="submit">Guardar resultado</button></div><span class="muted" style="font-size:13px">Si ya había un resultado para ese indicador, persona y periodo, se reemplaza.</span></form>
-    ${hist.length?`<div class="tablewrap"><table><thead><tr><th>Periodo</th><th>Indicador</th><th>Medido a</th><th>Resultado</th><th>Cumplimiento</th><th>Observación</th><th></th></tr></thead><tbody>${hist.map(m=>{ const k=kp.find(x=>x.id===m.kpiId)||{nombre:"Indicador eliminado"}; const p=cumpl(k,m.valor); return `<tr><td class="num">${esc(mesTxt(m.periodo))}</td><td>${esc(k.nombre)}</td><td>${esc(persNombre(m.empleadoId))}</td><td class="num">${esc(valTxt(k,m.valor))}</td><td><span class="chip ${semaforo(p)}">${pctTxt(p)}</span></td><td>${esc(m.nota||"")}</td><td><button class="btn ghost sm" data-act="del-med" data-r="${m.id}">Quitar</button></td></tr>`; }).join("")}</tbody></table></div>`:""}</div>`:""}`}
+    </div><div class="formfoot" style="border:0;padding:0"><button class="btn pri" type="submit">Guardar resultado</button></div><span class="muted" style="font-size:13px">Si ya había un resultado para ese indicador, persona y periodo (día, semana o mes), se reemplaza.</span></form>
+    ${hist.length?`<div class="tablewrap"><table><thead><tr><th>Periodo</th><th>Indicador</th><th>Medido a</th><th>Resultado</th><th>Cumplimiento</th><th>Observación</th><th></th></tr></thead><tbody>${hist.map(m=>{ const k=kp.find(x=>x.id===m.kpiId)||{nombre:"Indicador eliminado"}; const p=cumpl(k,m.valor); return `<tr><td class="num">${esc(periodoTxt(m.periodo))}</td><td>${esc(k.nombre)}</td><td>${esc(persNombre(m.empleadoId))}</td><td class="num">${esc(valTxt(k,m.valor))}</td><td><span class="chip ${semaforo(p)}">${pctTxt(p)}</span></td><td>${esc(m.nota||"")}</td><td><button class="btn ghost sm" data-act="del-med" data-r="${m.id}">Quitar</button></td></tr>`; }).join("")}</tbody></table></div>`:""}</div>`:""}`}
   </div>`; }
 
+/* --- procesos disciplinarios --- */
+const GRAVEDAD = ["Leve","Grave","Gravísima"];
+const RESULTADOS_DISC = ["Archivo sin sanción","Llamado de atención escrito","Acta de compromiso","Suspensión","Multa","Terminación con justa causa"];
+const MEDIOS_NOTIF = ["Entrega personal con firma","Correo electrónico","WhatsApp","Correo certificado","Se negó a recibir (con testigos)"];
+const ETAPAS = [["citacion","Citación a descargos"],["descargos","Diligencia de descargos"],["decision","Decisión"],["notificacion","Notificación"],["recurso","Recurso o segunda instancia"]];
+const _festivos={};
+function festivosCO(y){ if(_festivos[y]) return _festivos[y];
+  const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451);
+  const mes=Math.floor((h+l-7*m+114)/31), dia=((h+l-7*m+114)%31)+1; const pascua=new Date(y,mes-1,dia,12);
+  const lunes=dt=>{ const x=new Date(dt); const w=x.getDay(); if(w!==1) x.setDate(x.getDate()+((8-w)%7)); return x; };
+  const fijos=[[0,1],[4,1],[6,20],[7,7],[11,8],[11,25]].map(([mm,dd])=>new Date(y,mm,dd,12));
+  const movibles=[[0,6],[2,19],[5,29],[7,15],[9,12],[10,1],[10,11]].map(([mm,dd])=>lunes(new Date(y,mm,dd,12)));
+  const pas=[-3,-2].map(n=>addDays(pascua,n)).concat([43,64,71].map(n=>addDays(pascua,n)));
+  return _festivos[y]=new Set([...fijos,...movibles,...pas].map(iso)); }
+const esHabil = d => d.getDay()!==0&&d.getDay()!==6&&!festivosCO(d.getFullYear()).has(iso(d));
+function habTxt(a,b){ const h=habilesEntre(a,b); return h===null?"":h>=5?`${h} días hábiles de plazo`:`<b style="color:var(--crit)">Solo ${h} días hábiles: la ley exige mínimo 5</b>`; }
+function habilesEntre(a,b){ const x=toD(a), y=toD(b); if(!x||!y) return null; let n=0; for(let d=addDays(x,1); d<y; d=addDays(d,1)) if(esHabil(d)) n++; return n; }
+const discDe = e => (e.disciplinarios||[]).slice().sort((a,b)=>((b.fechaHechos||b.fecha||"")).localeCompare(a.fechaHechos||a.fecha||""));
+function estadoDisc(p){ if(p.clase==="llamado") return {txt:"Registrado",n:"mute",fin:true};
+  if(p.recurso&&p.recurso.resultado==="Pendiente") return {txt:"En segunda instancia",n:"info"};
+  if(p.notificacion) return {txt:"Cerrado",n:"ok",fin:true};
+  if(p.decision) return {txt:"Decidido · falta notificar",n:"warn"};
+  if(p.descargos) return {txt:"Pendiente de decisión",n:"warn"};
+  if(p.citacion) return {txt:`Descargos el ${fmtD(p.citacion.fechaDescargos)}`,n:"info"};
+  return {txt:"Abierto · falta citar",n:"warn"}; }
+const procesosAbiertos = () => activos().flatMap(e=>(e.disciplinarios||[]).filter(p=>p.clase==="proceso"&&!estadoDisc(p).fin).map(p=>({e,p})));
+function alertasDisc(e){ const out=[], t=today();
+  for(const p of (e.disciplinarios||[])){ if(p.clase!=="proceso"||estadoDisc(p).fin) continue; const ini=toD(p.fechaConocimiento||p.fechaHechos);
+    if(!p.decision&&ini&&diff(ini,t)>30) out.push({n:"warn",tipo:"Proceso disciplinario lento",fecha:p.fechaConocimiento||p.fechaHechos,txt:`Han pasado ${diff(ini,t)} días desde que se conocieron los hechos sin decisión. Por inmediatez conviene cerrarlo pronto.`});
+    if(!p.citacion) out.push({n:"info",tipo:"Proceso disciplinario sin citación",fecha:p.fechaConocimiento||p.fechaHechos,txt:"Entrega la citación a descargos con los hechos, las faltas y las pruebas."});
+    else if(!p.descargos){ const fd=toD(p.citacion.fechaDescargos), dd=fd?diff(t,fd):null;
+      if(dd!==null&&dd<0) out.push({n:"crit",tipo:"Descargos sin registrar",fecha:p.citacion.fechaDescargos,txt:`La diligencia era el ${fmtD(p.citacion.fechaDescargos)}. Registra el acta o si no asistió.`});
+      else if(dd!==null&&dd<=3) out.push({n:"info",tipo:"Diligencia de descargos próxima",fecha:p.citacion.fechaDescargos,txt:`${fmtD(p.citacion.fechaDescargos)}${p.citacion.hora?" a las "+p.citacion.hora:""}.`}); }
+    else if(!p.decision) out.push({n:"warn",tipo:"Decisión disciplinaria pendiente",fecha:p.descargos.fecha,txt:`Los descargos fueron el ${fmtD(p.descargos.fecha)}. Falta la decisión motivada.`});
+    else if(!p.notificacion) out.push({n:"warn",tipo:"Decisión disciplinaria sin notificar",fecha:p.decision.fecha,txt:`Se decidió “${p.decision.resultado}” el ${fmtD(p.decision.fecha)}.`}); }
+  return out; }
+
+function campoArchivo(id,actual){ return `<div class="field"><label for="${id}">${actual?"Reemplazar documento":"Documento firmado"}</label><input id="${id}" name="file" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" ${S.assets?"":"disabled"}>${actual?`<span class="hint">Déjalo vacío para conservar ${esc(actual.nombre)}</span>`:""}</div>`; }
+function verDocDisc(a,pid,etapa){ return a?`<button type="button" class="btn sm" data-act="disc-ver" data-p="${pid}" data-g="${etapa}">Ver ${esc(a.nombre.length>28?a.nombre.slice(0,26)+"…":a.nombre)}</button>`:""; }
+function formEtapa(e,p,etapa){ const v=p[etapa]||{}; const op=(arr,sel)=>arr.map(x=>`<option ${x===sel?"selected":""}>${esc(x)}</option>`).join("");
+  const pie=`<div class="formfoot" style="border:0;padding:0"><button type="button" class="btn" data-act="disc-cancel">Cancelar</button><button class="btn pri" type="submit">Guardar</button></div>`;
+  const abre=`<form class="addbox stack" data-form="disc-etapa" data-p="${p.id}" data-g="${etapa}"><h3>${esc(ETAPAS.find(x=>x[0]===etapa)[1])}</h3><div class="fgrid">`;
+  if(etapa==="citacion"){ const sug=(()=>{ let d=today(), n=0; while(n<6){ d=addDays(d,1); if(esHabil(d)) n++; } return iso(d); })();
+    return abre+`<div class="field"><label for="dc-f" class="req">Fecha de entrega de la citación</label><input id="dc-f" name="fecha" type="date" required value="${esc(v.fecha||iso(today()))}"></div>
+    <div class="field"><label for="dc-fd" class="req">Fecha de la diligencia</label><input id="dc-fd" name="fechaDescargos" type="date" required value="${esc(v.fechaDescargos||sug)}"><span class="hint" id="dc-hab">${habTxt(v.fecha||iso(today()),v.fechaDescargos||sug)}</span></div>
+    <div class="field"><label for="dc-h">Hora</label><input id="dc-h" name="hora" type="time" value="${esc(v.hora||"09:00")}"></div>
+    <div class="field wide"><label for="dc-l">Lugar</label><input id="dc-l" name="lugar" value="${esc(v.lugar||"Oficina administrativa, planta Dosquebradas")}"></div>
+    <div class="field wide"><label for="dc-p" class="req">Pruebas que se le trasladan</label><textarea id="dc-p" name="pruebas" rows="3" required placeholder="Ej.: informe del coordinador de producción del 20 de octubre, registro de ingreso, fotografías">${esc(v.pruebas||"")}</textarea></div>
+    ${campoArchivo("dc-file",v.archivo)}</div><span class="muted" style="font-size:13px">La ley exige mínimo 5 días hábiles entre la citación y la diligencia. El trabajador puede ir acompañado y debe conocer todas las pruebas.</span>${pie}</form>`; }
+  if(etapa==="descargos") return abre+`<div class="field"><label for="dd-f" class="req">Fecha</label><input id="dd-f" name="fecha" type="date" required value="${esc(v.fecha||(p.citacion&&p.citacion.fechaDescargos)||iso(today()))}"></div>
+    <div class="field"><label for="dd-a">Asistencia</label><select id="dd-a" name="asistio">${op(["Asistió","No asistió","Asistió y se negó a firmar el acta"],v.asistio)}</select></div>
+    <div class="field"><label for="dd-c">Acompañantes</label><input id="dd-c" name="acompanantes" value="${esc(v.acompanantes||"")}" placeholder="Nombres o “ninguno”"></div>
+    <div class="field wide"><label for="dd-r">Resumen de lo que dijo el trabajador</label><textarea id="dd-r" name="resumen" rows="3">${esc(v.resumen||"")}</textarea></div>
+    ${campoArchivo("dd-file",v.archivo)}</div>${pie}</form>`;
+  if(etapa==="decision") return abre+`<div class="field"><label for="de-f" class="req">Fecha de la decisión</label><input id="de-f" name="fecha" type="date" required value="${esc(v.fecha||iso(today()))}"></div>
+    <div class="field"><label for="de-r" class="req">Decisión</label><select id="de-r" name="resultado">${op(RESULTADOS_DISC,v.resultado)}</select></div>
+    <div class="field only-susp" ${v.resultado==="Suspensión"?"":"hidden"}><label for="de-d">Días de suspensión</label><input id="de-d" class="mono" name="dias" type="number" min="1" value="${esc(v.dias||"")}"></div>
+    <div class="field only-susp" ${v.resultado==="Suspensión"?"":"hidden"}><label for="de-dd">Desde</label><input id="de-dd" name="desde" type="date" value="${esc(v.desde||"")}"></div>
+    <div class="field only-susp" ${v.resultado==="Suspensión"?"":"hidden"}><label for="de-dh">Hasta</label><input id="de-dh" name="hasta" type="date" value="${esc(v.hasta||"")}"></div>
+    <div class="field wide"><label for="de-m" class="req">Motivación</label><textarea id="de-m" name="motivacion" rows="4" required placeholder="Hechos probados, pruebas valoradas, descargos del trabajador, norma incumplida y por qué la sanción es proporcional">${esc(v.motivacion||"")}</textarea></div>
+    ${campoArchivo("de-file",v.archivo)}</div><span class="muted" style="font-size:13px">La decisión debe ser razonada y proporcional. Una suspensión no puede pasar de 8 días la primera vez ni de 2 meses en reincidencia (art. 112 CST), y la sanción debe estar en el Reglamento Interno.</span>${pie}</form>`;
+  if(etapa==="notificacion") return abre+`<div class="field"><label for="dn-f" class="req">Fecha</label><input id="dn-f" name="fecha" type="date" required value="${esc(v.fecha||iso(today()))}"></div>
+    <div class="field"><label for="dn-m">Medio</label><select id="dn-m" name="medio">${op(MEDIOS_NOTIF,v.medio)}</select></div>
+    ${campoArchivo("dn-file",v.archivo)}</div>${pie}</form>`;
+  if(etapa==="recurso") return abre+`<div class="field"><label for="dr-f" class="req">Fecha en que lo presentó</label><input id="dr-f" name="fecha" type="date" required value="${esc(v.fecha||iso(today()))}"></div>
+    <div class="field"><label for="dr-r">Resultado</label><select id="dr-r" name="resultado">${op(["Pendiente","Confirma la decisión","Modifica la decisión","Revoca la decisión"],v.resultado)}</select></div>
+    <div class="field"><label for="dr-fr">Fecha del resultado</label><input id="dr-fr" name="fechaResultado" type="date" value="${esc(v.fechaResultado||"")}"></div>
+    <div class="field wide"><label for="dr-n">Quién resolvió y por qué</label><textarea id="dr-n" name="nota" rows="2">${esc(v.nota||"")}</textarea></div>
+    ${campoArchivo("dr-file",v.archivo)}</div>${pie}</form>`;
+  return ""; }
+function resumenEtapa(p,etapa){ const v=p[etapa]; if(!v) return "";
+  const l=[]; if(etapa==="citacion"){ l.push(`Entregada el ${fmtD(v.fecha)} · diligencia el ${fmtD(v.fechaDescargos)}${v.hora?" a las "+esc(v.hora):""}${v.lugar?" · "+esc(v.lugar):""}`); const h=habilesEntre(v.fecha,v.fechaDescargos); if(h!==null) l.push(`<span class="chip ${h>=5?"c-ok":"c-crit"}">${h} días hábiles de plazo</span>`); if(v.pruebas) l.push(`<span class="muted">Pruebas: ${esc(v.pruebas)}</span>`); }
+  if(etapa==="descargos"){ l.push(`${fmtD(v.fecha)} · ${esc(v.asistio||"")}${v.acompanantes?" · acompañado por "+esc(v.acompanantes):""}`); if(v.resumen) l.push(`<span class="muted">${esc(v.resumen)}</span>`); }
+  if(etapa==="decision"){ l.push(`${fmtD(v.fecha)} · <b>${esc(v.resultado)}</b>${v.resultado==="Suspensión"&&v.dias?` por ${esc(v.dias)} días${v.desde?` (${fmtD(v.desde)} a ${fmtD(v.hasta)})`:""}`:""}`); if(v.motivacion) l.push(`<span class="muted">${esc(v.motivacion)}</span>`); }
+  if(etapa==="notificacion") l.push(`${fmtD(v.fecha)} · ${esc(v.medio||"")}`);
+  if(etapa==="recurso") l.push(`Presentado el ${fmtD(v.fecha)} · ${esc(v.resultado||"")}${v.fechaResultado?" el "+fmtD(v.fechaResultado):""}${v.nota?` · <span class="muted">${esc(v.nota)}</span>`:""}`);
+  return l.map(x=>`<div style="font-size:14px">${x}</div>`).join(""); }
+function tarjetaProceso(e,p){ const st=estadoDisc(p); const ed=S.discEdit&&S.discEdit.pid===p.id?S.discEdit.etapa:null;
+  if(p.clase==="llamado") return `<div class="card pad stack" style="gap:6px"><div class="spread"><b>Llamado de atención ${esc((p.modalidad||"").toLowerCase())}</b><div class="row" style="gap:4px">${verDocDisc(p.archivo,p.id,"llamado")}<button class="btn ghost sm" data-act="disc-del" data-p="${p.id}">Quitar</button></div></div>
+    <div class="num muted">${fmtD(p.fecha)}</div><div style="font-size:14px">${esc(p.motivo||"")}</div></div>`;
+  const sig=ETAPAS.slice(0,4).find(([k])=>!p[k]); const pasos=ETAPAS.filter(([k])=>k!=="recurso"||p.recurso||p.notificacion);
+  return `<div class="card pad stack"><div class="spread"><div><b>Proceso disciplinario</b> <span class="chip c-${st.n}">${esc(st.txt)}</span> <span class="chip c-mute">${esc(p.gravedad||"")}</span></div><button class="btn ghost sm" data-act="disc-del" data-p="${p.id}">Eliminar</button></div>
+    <div class="num muted">Hechos del ${fmtD(p.fechaHechos)} · conocidos el ${fmtD(p.fechaConocimiento)}</div>
+    <div style="font-size:14px">${esc(p.hechos||"")}</div>${p.faltas?`<div class="muted" style="font-size:14px">Faltas: ${esc(p.faltas)}</div>`:""}
+    <div class="tl">${pasos.map(([k,l])=>{ const hecho=!!p[k];
+      return `<div class="tli ${hecho?"":"otro"}"><span class="dot"></span><div class="body"><div class="spread"><b>${esc(l)}</b><div class="row" style="gap:4px">${hecho?verDocDisc(p[k].archivo,p.id,k):""}${hecho&&ed!==k?`<button class="btn sm" data-act="disc-etapa" data-p="${p.id}" data-g="${k}">Editar</button>`:""}${!hecho&&ed!==k&&(k===(sig&&sig[0])||k==="recurso")?`<button class="btn sm pri" data-act="disc-etapa" data-p="${p.id}" data-g="${k}">Registrar</button>`:""}</div></div>
+        ${ed===k?formEtapa(e,p,k):hecho?resumenEtapa(p,k):`<span class="muted" style="font-size:13px">${k==="recurso"?"Solo si el trabajador apela la decisión.":"Pendiente"}</span>`}</div></div>`; }).join("")}</div>
+    ${p.decision&&p.decision.resultado==="Terminación con justa causa"&&e.estado!=="retirado"?`<div class="banner c-warn"><span>Registra la salida en la pestaña Retiro con el motivo “Terminación con justa causa”.</span><button class="btn sm" data-act="ftab" data-t="retiro">Ir a Retiro</button></div>`:""}</div>`; }
+function tDisciplinario(e){ const list=discDe(e); const n=S.discNuevo;
+  return `<div class="stack">
+  <div class="row"><button class="btn ${n==="proceso"?"pri":""}" data-act="disc-nuevo" data-c="proceso">+ Abrir proceso disciplinario</button><button class="btn ${n==="llamado"?"pri":""}" data-act="disc-nuevo" data-c="llamado">+ Registrar llamado de atención</button></div>
+  ${n==="proceso"?`<form class="addbox stack" data-form="disc-nuevo" data-c="proceso"><h3>Abrir proceso disciplinario</h3><div class="fgrid">
+    <div class="field"><label for="dp-fh" class="req">Fecha de los hechos</label><input id="dp-fh" name="fechaHechos" type="date" required></div>
+    <div class="field"><label for="dp-fc" class="req">Fecha en que la empresa los conoció</label><input id="dp-fc" name="fechaConocimiento" type="date" required value="${iso(today())}"></div>
+    <div class="field"><label for="dp-g">Gravedad según el Reglamento</label><select id="dp-g" name="gravedad">${GRAVEDAD.map(x=>`<option>${x}</option>`).join("")}</select></div>
+    <div class="field wide"><label for="dp-h" class="req">Hechos</label><textarea id="dp-h" name="hechos" rows="3" required placeholder="Qué pasó, cuándo, dónde y cómo (tiempo, modo y lugar)"></textarea></div>
+    <div class="field wide"><label for="dp-f">Faltas que se le imputan</label><textarea id="dp-f" name="faltas" rows="2" placeholder="Artículos del Reglamento Interno, cláusulas del contrato o normas del CST"></textarea></div>
+  </div><div class="formfoot" style="border:0;padding:0"><button type="button" class="btn" data-act="disc-cancel">Cancelar</button><button class="btn pri" type="submit">Abrir proceso</button></div></form>`:""}
+  ${n==="llamado"?`<form class="addbox stack" data-form="disc-nuevo" data-c="llamado"><h3>Llamado de atención</h3><div class="fgrid">
+    <div class="field"><label for="dl-f" class="req">Fecha</label><input id="dl-f" name="fecha" type="date" required value="${iso(today())}"></div>
+    <div class="field"><label for="dl-m">Modalidad</label><select id="dl-m" name="modalidad"><option>Escrito</option><option>Verbal</option></select></div>
+    ${campoArchivo("dl-file",null)}
+    <div class="field wide"><label for="dl-mo" class="req">Motivo</label><textarea id="dl-mo" name="motivo" rows="2" required></textarea></div>
+  </div><span class="muted" style="font-size:13px">Si el Reglamento Interno trata el llamado de atención como sanción, debe hacerse con proceso disciplinario y descargos.</span><div class="formfoot" style="border:0;padding:0"><button type="button" class="btn" data-act="disc-cancel">Cancelar</button><button class="btn pri" type="submit">Registrar</button></div></form>`:""}
+  ${list.length?list.map(p=>tarjetaProceso(e,p)).join(""):`<div class="empty"><b>Sin llamados de atención ni procesos disciplinarios</b>Aquí queda la historia disciplinaria con cada etapa y sus documentos firmados.</div>`}</div>`; }
+function vDisciplinario(){ const filas=S.emps.flatMap(e=>(e.disciplinarios||[]).map(p=>({e,p}))).filter(({p})=>S.discFiltro==="todos"||(p.clase==="proceso"&&!estadoDisc(p).fin))
+    .sort((a,b)=>(b.p.fechaHechos||b.p.fecha||"").localeCompare(a.p.fechaHechos||a.p.fecha||""));
+  const ab=procesosAbiertos(); const cnt=t=>ab.filter(({p})=>estadoDisc(p).txt.startsWith(t)).length;
+  return `<div class="stack"><div class="spread"><h1>Disciplinario</h1><div class="row"><select id="disc-emp" aria-label="Empleado"><option value="">Elegir empleado…</option>${activos().sort((a,b)=>nombre(a).localeCompare(nombre(b),"es")).map(e=>`<option value="${e.id}">${esc(nombre(e))}</option>`).join("")}</select><button class="btn pri" data-act="disc-ir">Abrir su historia</button></div></div>
+  <div class="tiles"><div class="card tile"><div class="k">Procesos abiertos</div><div class="v">${ab.length}</div></div><div class="card tile"><div class="k">Por citar</div><div class="v">${cnt("Abierto")}</div></div><div class="card tile"><div class="k">Decisión pendiente</div><div class="v">${cnt("Pendiente")}</div></div><div class="card tile"><div class="k">Por notificar</div><div class="v">${cnt("Decidido")}</div></div></div>
+  <div class="filters"><select id="disc-filtro"><option value="abiertos" ${S.discFiltro!=="todos"?"selected":""}>Procesos abiertos</option><option value="todos" ${S.discFiltro==="todos"?"selected":""}>Toda la historia</option></select></div>
+  <div class="card tablewrap">${filas.length?`<table><thead><tr><th>Empleado</th><th>Registro</th><th class="hide-sm">Hechos</th><th>Estado</th></tr></thead><tbody>${filas.map(({e,p})=>{ const st=estadoDisc(p); return `<tr class="click" data-act="disc-abrir" data-id="${e.id}"><td><b>${esc(nombre(e))}</b><br><small class="muted">${esc(e.cargo||"")}</small></td><td>${p.clase==="llamado"?"Llamado de atención":"Proceso · "+esc(p.gravedad||"")}${p.decision?`<br><small class="muted">${esc(p.decision.resultado)}</small>`:""}</td><td class="hide-sm" style="max-width:28em">${esc((p.hechos||p.motivo||"").slice(0,120))}<br><small class="muted num">${fmtD(p.fechaHechos||p.fecha)}</small></td><td><span class="chip c-${st.n}">${esc(st.txt)}</span></td></tr>`; }).join("")}</tbody></table>`:`<div class="empty"><b>${S.discFiltro==="todos"?"Sin registros disciplinarios":"No hay procesos abiertos"}</b>Elige un empleado arriba para registrar un llamado de atención o abrir un proceso.</div>`}</div>
+  <p class="muted" style="font-size:13px;margin:0">Guía del debido proceso (art. 115 CST, Ley 2466 de 2025): comunicar por escrito los hechos y las faltas, trasladar todas las pruebas, dar mínimo 5 días hábiles para los descargos, permitir que vaya acompañado, decidir de forma motivada y proporcional, notificar y, si la estructura lo permite, ofrecer segunda instancia. Valídalo con tu Reglamento Interno y tu asesor laboral.</p></div>`; }
 /* --- informes --- */
 const rowPlanta = e => { const c=vigente(e)||{}; return {"Nombres":e.nombres||"","Apellidos":e.apellidos||"","Tipo doc.":e.tipoDoc||"","Documento":e.documento||"","Cargo":e.cargo||"","Área":e.area||"","Jefe inmediato":e.jefe||"","Fecha ingreso":dmy(e.fechaIngreso),"Antigüedad":antig(e),"Tipo contrato":c.tipo||"","Fin contrato":dmy(c.fin),"Renovaciones":c.tipo==="Término fijo"?renovaciones(e):"","Salario básico":Number(e.salario)||"","Aux. transporte":aplicaAux(e)?S.config.auxTransporte:0,"EPS":e.eps||"","AFP":e.afp||"","Cesantías":e.cesantias||"","ARL":e.arl||"","Riesgo ARL":e.riesgoArl||"","Caja compensación":e.ccf||"","Celular":e.telefono||"","Correo":e.email||"","Municipio":e.ciudad||"","Fecha nacimiento":dmy(e.fechaNacimiento),"Contacto emergencia":[e.emergNombre,e.emergParentesco,e.emergTel].filter(Boolean).join(" · "),"RH":e.rh||"","Talla camisa":e.tallaCamisa||"","Talla pantalón":e.tallaPantalon||"","Talla calzado":e.tallaCalzado||""}; };
 const INFORMES = [
@@ -607,12 +737,17 @@ const INFORMES = [
    for(const e of activos()){ const b=toD(e.fechaNacimiento); if(b&&b.getMonth()===m) rows.push({"Día":b.getDate(),"Evento":"Cumpleaños","Empleado":nombre(e),"Área":e.area||"","Detalle":`${y-b.getFullYear()} años`});
      const i=toD(e.fechaIngreso); if(i&&i.getMonth()===m&&i.getFullYear()<y) rows.push({"Día":i.getDate(),"Evento":"Aniversario en ASPM","Empleado":nombre(e),"Área":e.area||"","Detalle":`${y-i.getFullYear()} año${y-i.getFullYear()>1?"s":""}`}); }
    return {rows:rows.sort((a,b)=>a.Día-b.Día)}; }},
+ {id:"disciplinario",nombre:"Historia disciplinaria",desc:"Llamados de atención y procesos con sus etapas",params:["desde","hasta"],build:p=>{ const rows=[];
+   for(const e of S.emps) for(const d of (e.disciplinarios||[])){ const f=d.fechaHechos||d.fecha||""; if(p.desde&&f<p.desde) continue; if(p.hasta&&f>p.hasta) continue;
+     rows.push({"Fecha hechos":f,"Empleado":nombre(e),"Documento":e.documento||"","Área":e.area||"","Cargo":e.cargo||"","Registro":d.clase==="llamado"?"Llamado de atención "+String(d.modalidad||"").toLowerCase():"Proceso disciplinario","Gravedad":d.gravedad||"","Hechos o motivo":d.hechos||d.motivo||"","Faltas":d.faltas||"","Citación":d.citacion?dmy(d.citacion.fecha):"","Diligencia":d.citacion?dmy(d.citacion.fechaDescargos):"","Días hábiles de plazo":d.citacion?habilesEntre(d.citacion.fecha,d.citacion.fechaDescargos):"","Descargos":d.descargos?dmy(d.descargos.fecha)+" · "+(d.descargos.asistio||""):"","Decisión":d.decision?d.decision.resultado:"","Días suspensión":d.decision&&d.decision.dias?Number(d.decision.dias):"","Fecha decisión":d.decision?dmy(d.decision.fecha):"","Notificación":d.notificacion?dmy(d.notificacion.fecha)+" · "+(d.notificacion.medio||""):"","Recurso":d.recurso?(d.recurso.resultado||""):"","Estado":estadoDisc(d).txt}); }
+   rows.sort((a,b)=>b["Fecha hechos"].localeCompare(a["Fecha hechos"])); rows.forEach(r=>r["Fecha hechos"]=dmy(r["Fecha hechos"])); return {rows}; }},
  {id:"tallas",nombre:"Tallas de dotación",desc:"Camisa, pantalón y calzado de quienes reciben dotación",build:()=>({rows:activos().sort((a,b)=>(a.area||"").localeCompare(b.area||"")||nombre(a).localeCompare(nombre(b))).map(e=>({"Empleado":nombre(e),"Documento":e.documento||"","Área":e.area||"","Cargo":e.cargo||"","Recibe dotación":aplicaAux(e)?"Sí":"No","Camisa":e.tallaCamisa||"","Pantalón":e.tallaPantalon||"","Calzado":e.tallaCalzado||""}))})},
  {id:"manuales",nombre:"Manuales de funciones",desc:"Cargos, quién los ocupa y estado de su manual",build:()=>({rows:S.cargos.slice().sort((a,b)=>(a.area||"").localeCompare(b.area||"")||(a.nombre||"").localeCompare(b.nombre||"")).map(c=>({"Cargo":c.nombre||"","Área":c.area||"","Reporta a":c.reportaA||"","Versión":c.version||"","Actualizado":dmy(c.fechaActualizacion),"Personas":personasCargo(c).map(nombre).join(", "),"Manual PDF":c.manual?"Sí":"No","N.º funciones":nFunciones(c),"N.º KPI":(c.kpis||[]).length,"Objetivo":c.objetivo||"","Funciones":String(c.funciones||"").split("\n").map(s=>s.trim()).filter(Boolean).join(" | "),"Requisitos":c.requisitos||""}))})},
  {id:"kpi",nombre:"Resultados de KPI",desc:"Resultados y cumplimiento por cargo y persona",params:["desde","hasta"],build:p=>{ const rows=[], d=(p.desde||"").slice(0,7), h=(p.hasta||"").slice(0,7);
-   for(const c of S.cargos) for(const m of (c.mediciones||[])){ if(d&&m.periodo<d) continue; if(h&&m.periodo>h) continue; const k=(c.kpis||[]).find(x=>x.id===m.kpiId); if(!k) continue; const pc=cumpl(k,m.valor);
-     rows.push({"Periodo":m.periodo,"Cargo":c.nombre,"Área":c.area||"","Indicador":k.nombre,"Medido a":persNombre(m.empleadoId),"Meta":metaTxt(k),"Resultado":Number(m.valor),"Unidad":k.unidad||"","Cumplimiento %":pc==null?"":Math.round(Math.min(pc,150)),"Estado":pc==null?"":pc>=100?"Cumple":pc>=80?"En riesgo":"No cumple","Observación":m.nota||""}); }
-   rows.sort((a,b)=>b.Periodo.localeCompare(a.Periodo)||a.Cargo.localeCompare(b.Cargo)); rows.forEach(r=>r.Periodo=mesTxt(r.Periodo)); return {rows}; }},
+   for(const c of S.cargos) for(const m of (c.mediciones||[])){ const mensual=String(m.periodo).length===7, key=ordenPeriodo(m.periodo);
+     if(p.desde&&(mensual?m.periodo<d:key<p.desde)) continue; if(p.hasta&&(mensual?m.periodo>h:key>p.hasta)) continue; const k=(c.kpis||[]).find(x=>x.id===m.kpiId); if(!k) continue; const pc=cumpl(k,m.valor);
+     rows.push({"Periodo":m.periodo,"Mes":mesTxt(mesDePeriodo(m.periodo)),"Frecuencia":k.frecuencia||"","Cargo":c.nombre,"Área":c.area||"","Indicador":k.nombre,"Medido a":persNombre(m.empleadoId),"Meta":metaTxt(k),"Resultado":Number(m.valor),"Unidad":k.unidad||"","Cumplimiento %":pc==null?"":Math.round(Math.min(pc,150)),"Estado":pc==null?"":pc>=100?"Cumple":pc>=80?"En riesgo":"No cumple","Observación":m.nota||""}); }
+   rows.sort((a,b)=>ordenPeriodo(b.Periodo).localeCompare(ordenPeriodo(a.Periodo))||a.Cargo.localeCompare(b.Cargo)); rows.forEach(r=>r.Periodo=periodoTxt(r.Periodo)); return {rows}; }},
  {id:"alertas",nombre:"Alertas abiertas",desc:"Todo lo pendiente, ordenado por urgencia",build:()=>({rows:todasAlertas().map(a=>({"Urgencia":{crit:"Urgente",warn:"Atención",info:"Pendiente"}[a.n],"Alerta":a.tipo,"Empleado":nombre(a.e),"Área":a.e.area||"","Fecha":dmy(a.fecha),"Detalle":a.txt}))})},
 ];
 function paramCtl(p){ const rp=S.rp;
@@ -781,7 +916,7 @@ function vImport(){ const imp=S.importRows; if(!imp) return ""; const r=analizar
 const JSZIP_URL="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
 const cargarJSZip = () => window.JSZip ? Promise.resolve() : cargarScript(JSZIP_URL);
 function archivosRef(emps,cargos){ const out=new Map(); const add=a=>{ if(a&&a.id&&!out.has(a.id)) out.set(a.id,a); };
-  (emps||[]).forEach(e=>{ ["contratos","documentos","novedades"].forEach(k=>(e[k]||[]).forEach(x=>add(x.archivo))); }); (cargos||[]).forEach(c=>add(c.manual)); return out; }
+  (emps||[]).forEach(e=>{ ["contratos","documentos","novedades"].forEach(k=>(e[k]||[]).forEach(x=>add(x.archivo))); (e.disciplinarios||[]).forEach(p=>{ add(p.archivo); ETAPAS.forEach(([k])=>{ if(p[k]) add(p[k].archivo); }); }); }); (cargos||[]).forEach(c=>add(c.manual)); return out; }
 async function exportarRespaldo(btn){ if(!S.downloads){ toast("Las descargas no están disponibles en esta vista."); return; }
   const txt=btn.textContent; btn.disabled=true;
   try{ await cargarJSZip(); const zip=new window.JSZip(); const arch=[...archivosRef(S.emps,S.cargos).values()]; let ok=0, malos=0;
@@ -802,7 +937,8 @@ async function importarRespaldo(file){
     for(const r of rutas){ i++; toast(`Subiendo archivos ${i} de ${rutas.length}…`); const id=r.slice(9); const m=meta.get(id)||{}; const tipo=m.tipo||"application/pdf";
       const blob=new Blob([await zip.file(r).async("arraybuffer")],{type:tipo}); const up=await S.assets.upload(blob,{type:tipo}); mapa[id]=up.id; }
     const fix=a=>a&&a.id&&mapa[a.id]?{...a,id:mapa[a.id]}:a; i=0;
-    for(const e0 of emps){ i++; toast(`Guardando expedientes ${i} de ${emps.length}…`); const e=clone(e0); const id=e.id; delete e.id; ["contratos","documentos","novedades"].forEach(k=>e[k]=(e[k]||[]).map(x=>x.archivo?{...x,archivo:fix(x.archivo)}:x)); await S.db.doc("empleados/"+id).set(e); }
+    for(const e0 of emps){ i++; toast(`Guardando expedientes ${i} de ${emps.length}…`); const e=clone(e0); const id=e.id; delete e.id; ["contratos","documentos","novedades"].forEach(k=>e[k]=(e[k]||[]).map(x=>x.archivo?{...x,archivo:fix(x.archivo)}:x));
+      e.disciplinarios=(e.disciplinarios||[]).map(p=>{ const q={...p}; if(q.archivo) q.archivo=fix(q.archivo); ETAPAS.forEach(([k])=>{ if(q[k]&&q[k].archivo) q[k]={...q[k],archivo:fix(q[k].archivo)}; }); return q; }); await S.db.doc("empleados/"+id).set(e); }
     for(const c0 of cargos){ const c=clone(c0); const id=c.id; delete c.id; if(c.manual) c.manual=fix(c.manual); await S.db.doc("cargos/"+id).set(c); }
     if(data.config) await S.db.doc("config/general").set(data.config);
     toast(`Respaldo restaurado: ${emps.length} empleados, ${cargos.length} cargos, ${rutas.length} archivos`); }
@@ -812,7 +948,12 @@ document.addEventListener("click",async ev=>{ const el=ev.target.closest("[data-
   if(a==="nav") return setView(el.dataset.v);
   if(a==="nuevo") return setView("nuevo");
   if(a==="ver"){ S.sel=id; S.ftab="ficha"; return setView("ficha"); }
-  if(a==="ftab"){ S.ftab=el.dataset.t; S.dirty=false; S.edit=null; return render(); }
+  if(a==="ftab"){ S.ftab=el.dataset.t; S.dirty=false; S.edit=null; S.discEdit=null; S.discNuevo=null; return render(); }
+  if(a==="disc-ir"){ const v=($("#disc-emp")||{}).value; if(!v) return toast("Elige un empleado."); S.sel=v; S.ftab="disciplinario"; S.discNuevo=null; S.discEdit=null; return setView("ficha"); }
+  if(a==="disc-abrir"){ S.sel=id; S.ftab="disciplinario"; S.discNuevo=null; S.discEdit=null; return setView("ficha"); }
+  if(a==="disc-nuevo"){ S.discNuevo=S.discNuevo===el.dataset.c?null:el.dataset.c; S.discEdit=null; S.dirty=false; return render(); }
+  if(a==="disc-cancel"){ S.discNuevo=null; S.discEdit=null; S.dirty=false; return render(); }
+  if(a==="disc-etapa"){ S.discEdit={pid:el.dataset.p,etapa:el.dataset.g}; S.discNuevo=null; S.dirty=false; render(); requestAnimationFrame(()=>{ const f=$('form[data-form="disc-etapa"]'); if(f) f.scrollIntoView({block:"center",behavior:"smooth"}); }); return; }
   if(a==="edit-ct"||a==="edit-nov"){ S.edit={t:a==="edit-ct"?"ct":"nov",id:r}; S.dirty=false; render(); requestAnimationFrame(()=>{ const f=$(`form[data-form="${a==="edit-ct"?"contrato":"novedad"}"]`); if(f){ f.scrollIntoView({block:"center",behavior:"smooth"}); const x=f.querySelector("select,input"); if(x) x.focus({preventScroll:true}); } }); return; }
   if(a==="edit-cancel"){ S.edit=null; S.dirty=false; return render(); }
   if(a==="rep"){ S.rep=r; return render(); }
@@ -842,8 +983,13 @@ document.addEventListener("click",async ev=>{ const el=ev.target.closest("[data-
     return guardarXlsx(`Manual de funciones ${cg.nombre}.xlsx`,[
       {nombre:"Manual",titulo:`Manual de funciones · ${cg.nombre}`,rows:[["Cargo",cg.nombre],["Área",cg.area],["Reporta a",cg.reportaA],["Versión",cg.version],["Actualizado",dmy(cg.fechaActualizacion)],["Personas en el cargo",personasCargo(cg).map(nombre).join(", ")],["Objetivo",cg.objetivo],...funcs.map((f,i)=>[`Función ${i+1}`,f]),["Requisitos",cg.requisitos],["Competencias",cg.competencias]].map(([k,v])=>({"Campo":k,"Detalle":v||""}))},
       {nombre:"KPI",titulo:"Indicadores del cargo",rows:(cg.kpis||[]).map(k=>({"Indicador":k.nombre,"Fórmula":k.formula||"","Meta":metaTxt(k),"Frecuencia":k.frecuencia||"","Fuente":k.fuente||""}))},
-      {nombre:"Resultados",titulo:"Resultados registrados",rows:(cg.mediciones||[]).slice().sort((a,b)=>b.periodo.localeCompare(a.periodo)).map(m=>{ const k=(cg.kpis||[]).find(x=>x.id===m.kpiId)||{}; const p=cumpl(k,m.valor); return {"Periodo":mesTxt(m.periodo),"Indicador":k.nombre||"","Medido a":persNombre(m.empleadoId),"Resultado":Number(m.valor),"Meta":k.nombre?metaTxt(k):"","Cumplimiento %":p==null?"":Math.round(Math.min(p,150)),"Observación":m.nota||""}; })}]); }
+      {nombre:"Resultados",titulo:"Resultados registrados",rows:(cg.mediciones||[]).slice().sort((a,b)=>ordenPeriodo(b.periodo).localeCompare(ordenPeriodo(a.periodo))).map(m=>{ const k=(cg.kpis||[]).find(x=>x.id===m.kpiId)||{}; const p=cumpl(k,m.valor); return {"Periodo":periodoTxt(m.periodo),"Frecuencia":k.frecuencia||"","Indicador":k.nombre||"","Medido a":persNombre(m.empleadoId),"Resultado":Number(m.valor),"Meta":k.nombre?metaTxt(k):"","Cumplimiento %":p==null?"":Math.round(Math.min(p,150)),"Observación":m.nota||""}; })}]); }
   const e=S.sel?getEmp(S.sel):null;
+  if(a==="disc-ver"&&e){ const p=(e.disciplinarios||[]).find(x=>x.id===el.dataset.p); const g=el.dataset.g; const ar=p&&(g==="llamado"?p.archivo:(p[g]&&p[g].archivo)); if(ar) verArchivo(ar); return; }
+  if(a==="disc-del"&&e){ const p=(e.disciplinarios||[]).find(x=>x.id===el.dataset.p); if(!p) return;
+    if(!await confirmar("Eliminar registro",`Se borra ${p.clase==="llamado"?"este llamado de atención":"este proceso disciplinario con todas sus etapas"} y sus documentos. La historia disciplinaria normalmente se conserva; elimínalo solo si se creó por error.`,"Eliminar")) return;
+    e.disciplinarios=e.disciplinarios.filter(x=>x.id!==p.id); e.novedades=(e.novedades||[]).filter(n=>n.discId!==p.id);
+    try{ await saveEmp(e); for(const ar of [p.archivo,...ETAPAS.map(([k])=>p[k]&&p[k].archivo)].filter(Boolean)) await borrarArchivo(ar); toast("Registro eliminado"); }catch(err){ toast(errMsg(err)); } return; }
   if(a==="ficha-xlsx"&&e){ const c=rowPlanta(e); return guardarXlsx(`Ficha ${nombre(e)}.xlsx`,[{nombre:"Ficha",titulo:"Ficha del empleado",rows:Object.entries(c).map(([k,v])=>({"Campo":k,"Valor":v}))},{nombre:"Contratos",titulo:"Contratos y otrosíes",rows:ordenC(e).map(k=>({"Tipo":k.esOtrosi?"Otrosí":k.tipo,"Inicio":dmy(k.inicio),"Fin":dmy(k.fin),"Cargo":k.cargo||"","Salario":Number(k.salario)||"","Firmado cargado":k.archivo?"Sí":"No","Nota":k.nota||""}))},{nombre:"Novedades",titulo:"Novedades",rows:(e.novedades||[]).map(n=>({"Tipo":n.tipo,"Desde":dmy(n.desde),"Hasta":dmy(n.hasta),"Días":Number(n.dias)||"","Días pagados en dinero":Number(n.diasComp)||"","Valor pagado":Number(n.valorComp)||"","Detalle":n.nota||""}))},{nombre:"Documentos",titulo:"Expediente",rows:(e.documentos||[]).map(d=>({"Documento":d.categoria,"Fecha":dmy(d.fecha),"Vence":dmy(d.vence),"Archivo":d.archivo?d.archivo.nombre:""}))}]); }
   if((a==="file-ver"||a==="file-dl")&&e){ const s=el.dataset.s; const item=s==="ct"?(e.contratos||[]).find(x=>x.id===r):s==="doc"?(e.documentos||[]).find(x=>x.id===r):(e.novedades||[]).find(x=>x.id===r); if(!item||!item.archivo) return; return a==="file-ver"?verArchivo(item.archivo):descargarArchivo(item.archivo); }
   if(a==="del-ct"&&e){ const k=e.contratos.find(x=>x.id===r); if(!await confirmar("Eliminar contrato",`Se borra el registro ${k.esOtrosi?"del otrosí":"del contrato"} del ${fmtD(k.inicio)}${k.archivo?" y su documento firmado":""}.`,"Eliminar")) return;
@@ -869,6 +1015,10 @@ document.addEventListener("change",async ev=>{ const t=ev.target;
   if(t.id==="resp-file"&&t.files[0]){ const f=t.files[0]; t.value=""; return importarRespaldo(f); }
   if(t.dataset.impCol!==undefined&&S.importRows){ const i=+t.dataset.impCol, k=t.value; if(k&&k!=="_obs") S.importRows.map=S.importRows.map.map((x,j)=>j!==i&&x===k?"_obs":x); S.importRows.map[i]=k; S.importRows.abierto=true; return render(); }
   if(t.id==="imp-upd"&&S.importRows){ S.importRows.actualizar=t.checked; return render(); }
+  if(t.id==="m-kpi"){ const c=S.cargos.find(x=>x.id===S.cargoSel); const k=c&&(c.kpis||[]).find(x=>x.id===t.value); const box=$("#m-per-box"); if(box) box.innerHTML=campoPeriodo(k); return; }
+  if(t.id==="disc-filtro"){ S.discFiltro=t.value; return render(); }
+  if(t.id==="de-r"){ t.closest("form").querySelectorAll(".only-susp").forEach(x=>x.hidden=t.value!=="Suspensión"); return; }
+  if(t.id==="dc-f"||t.id==="dc-fd"){ const h=$("#dc-hab"); if(h) h.innerHTML=habTxt(($("#dc-f")||{}).value,($("#dc-fd")||{}).value); return; }
   if(t.id==="kpi-per"&&t.value){ S.kpiPer=t.value; return render(); }
   if(t.dataset.up==="manual"&&t.files[0]){ const c=getCargo(t.dataset.r); if(!c) return; toast("Subiendo manual…");
     try{ const old=c.manual; c.manual=await subir(t.files[0]); await saveCargo(c); if(old) await borrarArchivo(old); toast("Manual guardado"); }catch(err){ toast(errMsg(err)); } return; }
@@ -895,9 +1045,28 @@ document.addEventListener("submit",async ev=>{ const f=ev.target.closest("form[d
       c.kpis=[...(c.kpis||[]),{id:uid(),nombre:o.nombre,formula:o.formula,fuente:o.fuente,meta:o.meta===""?"":Number(o.meta),unidad:o.unidad,sentido:o.sentido,frecuencia:o.frecuencia}]; await saveCargo(c); return done("Indicador agregado"); }
     if(kind==="medicion"){ const o=leerForm(f); const c=getCargo(S.cargoSel); if(!c) return fail({}); const val=Number(o.valor);
       if(o.valor===""||isNaN(val)){ if(btn) btn.disabled=false; return toast("Escribe el resultado en números."); }
-      c.mediciones=(c.mediciones||[]).filter(m=>!(m.kpiId===o.kpiId&&m.periodo===o.periodo&&(m.empleadoId||"")===(o.empleadoId||"")));
-      c.mediciones.push({id:uid(),kpiId:o.kpiId,empleadoId:o.empleadoId||"",periodo:o.periodo,valor:val,nota:o.nota}); await saveCargo(c); S.kpiPer=o.periodo; return done("Resultado guardado"); }
+      const kk=(c.kpis||[]).find(x=>x.id===o.kpiId); let per=o.periodo;
+      if(esCorta(kk)){ const d=toD(per); if(!d){ if(btn) btn.disabled=false; return toast("Elige la fecha."); } per=kk.frecuencia==="Semanal"?semanaIso(d):iso(d); }
+      else if(!/^\d{4}-\d{2}$/.test(per)){ if(btn) btn.disabled=false; return toast("Elige el mes."); }
+      c.mediciones=(c.mediciones||[]).filter(m=>!(m.kpiId===o.kpiId&&m.periodo===per&&(m.empleadoId||"")===(o.empleadoId||"")));
+      c.mediciones.push({id:uid(),kpiId:o.kpiId,empleadoId:o.empleadoId||"",periodo:per,valor:val,nota:o.nota}); await saveCargo(c); S.kpiPer=mesDePeriodo(per); return done("Resultado guardado · "+periodoTxt(per)); }
     const e=getEmp(S.sel); if(!e) return fail({});
+    if(kind==="disc-nuevo"){ const o=leerForm(f); const file=fileOf("file"); delete o.file; const cl=f.dataset.c; let p;
+      if(cl==="proceso"){ if(o.fechaHechos&&o.fechaConocimiento&&o.fechaHechos>o.fechaConocimiento){ if(btn) btn.disabled=false; return toast("Los hechos no pueden ser posteriores a la fecha en que se conocieron."); }
+        p={id:uid(),clase:"proceso",fechaHechos:o.fechaHechos,fechaConocimiento:o.fechaConocimiento,gravedad:o.gravedad,hechos:o.hechos,faltas:o.faltas,creado:new Date().toISOString()}; }
+      else { p={id:uid(),clase:"llamado",fecha:o.fecha,modalidad:o.modalidad,motivo:o.motivo,creado:new Date().toISOString()}; if(file){ toast("Subiendo documento…"); p.archivo=await subir(file); } }
+      e.disciplinarios=[...(e.disciplinarios||[]),p]; await saveEmp(e); S.discNuevo=null; S.discEdit=cl==="proceso"?{pid:p.id,etapa:"citacion"}:null; return done(cl==="proceso"?"Proceso abierto · ahora registra la citación":"Llamado de atención registrado"); }
+    if(kind==="disc-etapa"){ const o=leerForm(f); const file=fileOf("file"); delete o.file; const pid=f.dataset.p, g=f.dataset.g; const p=(e.disciplinarios||[]).find(x=>x.id===pid); if(!p) return fail({});
+      const old=p[g]||{}; const v={...old,...o};
+      if(g==="citacion"){ if(v.fechaDescargos<v.fecha){ if(btn) btn.disabled=false; return toast("La diligencia no puede ser antes de la citación."); }
+        const h=habilesEntre(v.fecha,v.fechaDescargos); if(h!==null&&h<5&&!await confirmar("Plazo menor al legal",`Entre la citación y la diligencia hay ${h} días hábiles. La ley exige mínimo 5. ¿Guardar de todas formas?`,"Guardar igual")){ if(btn) btn.disabled=false; return; } }
+      if(g==="decision"){ if(v.resultado!=="Suspensión"){ delete v.dias; delete v.desde; delete v.hasta; }
+        else { const d=Number(v.dias)||0; const previas=(e.disciplinarios||[]).filter(x=>x.id!==pid&&x.decision&&x.decision.resultado==="Suspensión").length; const max=previas?60:8;
+          if(d>max&&!await confirmar("Suspensión mayor al límite",`El art. 112 del CST permite hasta ${max} días ${previas?"en reincidencia":"la primera vez"}. ¿Guardar de todas formas?`,"Guardar igual")){ if(btn) btn.disabled=false; return; } } }
+      if(file){ toast("Subiendo documento…"); v.archivo=await subir(file); }
+      p[g]=v;
+      if(g==="decision"){ e.novedades=(e.novedades||[]).filter(n=>n.discId!==pid); if(v.resultado==="Suspensión"&&v.desde) e.novedades.push({id:uid(),tipo:"Suspensión disciplinaria",desde:v.desde,hasta:v.hasta||"",dias:Number(v.dias)||"",nota:"Decisión del proceso disciplinario del "+fmtD(v.fecha),discId:pid}); }
+      await saveEmp(e); if(file&&old.archivo) await borrarArchivo(old.archivo); S.discEdit=null; return done("Etapa guardada"); }
     if(kind==="ficha"){ Object.assign(e,leerForm(f)); await saveEmp(e); return done("Cambios guardados"); }
     if(kind==="contrato"){ const o=leerForm(f); const file=fileOf("file"); delete o.file; const edId=S.edit&&S.edit.t==="ct"?S.edit.id:null; const old=edId?(e.contratos||[]).find(x=>x.id===edId):null;
       if(edId&&!old){ S.edit=null; if(btn) btn.disabled=false; return toast("Ese contrato ya no existe."); }
@@ -921,7 +1090,7 @@ document.addEventListener("submit",async ev=>{ const f=ev.target.closest("form[d
   }catch(err){ fail(err); } });
 
 /* ---------- arranque ---------- */
-const hv=(location.hash||"").slice(1); if(["panel","empleados","cargos","informes","ajustes"].includes(hv)) S.view=hv;
+const hv=(location.hash||"").slice(1); if(["panel","empleados","cargos","disciplinario","informes","ajustes"].includes(hv)) S.view=hv;
 render();
 /* ---------- versión web: conexión con Supabase ---------- */
 S.modo="web";
