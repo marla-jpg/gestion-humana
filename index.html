@@ -216,7 +216,8 @@ window.GH_CONFIG = {
 const DEF = {smmlv:1750905, auxTransporte:249095, diasAlerta:45, empresa:"Alimentos Saludables para Mascotas S.A.S."};
 const AREAS = ["Producción","Calidad","Compras e Inventarios","Contabilidad y Finanzas","Comercial","Mercadeo","Logística y Despachos","Mantenimiento","Administración","Gerencia"];
 const TIPOS_CONTRATO = ["Término fijo","Término indefinido","Obra o labor","Aprendizaje SENA","Prestación de servicios"];
-const DOCS_REQ = ["Hoja de vida","Copia de cédula","Certificados de estudio","Referencias verificadas","Examen médico de ingreso","Afiliación EPS","Afiliación AFP","Afiliación ARL","Afiliación caja de compensación","Certificado manipulación de alimentos","Inducción SST","Autorización tratamiento de datos","Manual de funciones firmado"];
+const DOCS_REQ = ["Hoja de vida","Copia de cédula","Certificados de estudio","Referencias verificadas","Examen médico de ingreso","Afiliación EPS","Afiliación AFP","Afiliación ARL","Afiliación caja de compensación","Certificado manipulación de alimentos","Inducción SST","Autorización tratamiento de datos","Acuerdo de confidencialidad","Manual de funciones firmado"];
+const DOCS_EXTRA = ["Otrosí","Certificado laboral","Acta de entrega de EPP","Evaluación de desempeño","Otro"];
 const FRECUENCIAS = ["Diaria","Semanal","Mensual","Bimestral","Trimestral","Semestral","Anual"];
 const PASO_FREQ = {Diaria:1,Semanal:1,Mensual:1,Bimestral:2,Trimestral:3,Semestral:6,Anual:12};
 const TIPOS_NOV = ["Vacaciones","Incapacidad","Licencia","Permiso","Suspensión disciplinaria","Capacitación","Examen médico ocupacional","Entrega de dotación","Entrega de EPP","Cambio salarial o de cargo","Otro"];
@@ -481,17 +482,17 @@ function tContratos(e){ const list=ordenC(e).reverse(); const c=vigente(e); let 
     <label class="row" style="font-size:14px"><input type="checkbox" name="esOtrosi" id="c-otro" ${pre.esOtrosi?"checked":""}> Es un otrosí (modifica el contrato vigente, no lo reemplaza)</label>
   </div><div class="formfoot" style="border:0;padding:0">${pre.ed?`<button type="button" class="btn" data-act="edit-cancel">Cancelar edición</button><button class="btn pri" type="submit">Guardar cambios</button>`:`<button class="btn pri" type="submit">Guardar contrato</button>`}</div>${pre.ed?"":`<span class="hint muted" style="font-size:13px">Las fechas de la renovación se proponen con la misma duración del contrato anterior. Revísalas antes de guardar.</span>`}</form></div>`; }
 
-function tDocumentos(e){ const docs=e.documentos||[]; const byCat={}; docs.forEach(d=>(byCat[d.categoria]=byCat[d.categoria]||[]).push(d)); const otros=docs.filter(d=>!DOCS_REQ.includes(d.categoria));
+function tDocumentos(e){ const docs=e.documentos||[]; const byCat={}; docs.forEach(d=>{ const k=sinTilde(d.categoria); (byCat[k]=byCat[k]||[]).push(d); }); const otros=docs.filter(d=>!DOCS_REQ.some(c=>sinTilde(c)===sinTilde(d.categoria)));
   const fila=(cat,d)=>`<div class="docrow"><span class="tick ${d?"y":"n"}">${d?"✓":"!"}</span><div style="min-width:0"><b>${esc(cat)}</b>${d?`<div class="muted num" style="font-size:13px">${d.fecha?fmtD(d.fecha):""}${d.vence?` · vence ${fmtD(d.vence)}`:""}${d.nombre&&d.nombre!==cat?` · ${esc(d.nombre)}`:""}</div>`:""}</div>
     <div class="row">${d?`${d.archivo?`<button class="btn sm" data-act="file-ver" data-s="doc" data-r="${d.id}">Ver</button>`:`<span class="chip c-mute">Sin archivo</span>`}<button class="btn ghost sm" data-act="del-doc" data-r="${d.id}">Quitar</button>`:`<span class="chip c-warn">Falta</span>`}</div></div>`;
-  const ok=DOCS_REQ.filter(c=>byCat[c]).length;
+  const ok=DOCS_REQ.filter(c=>byCat[sinTilde(c)]).length;
   return `<div class="stack"><div class="spread"><h3>Expediente · ${ok} de ${DOCS_REQ.length} documentos básicos</h3></div>
-  <div class="doclist">${DOCS_REQ.map(c=>fila(c,(byCat[c]||[]).slice(-1)[0])).join("")}${otros.map(d=>fila(d.categoria,d)).join("")}</div>
+  <div class="doclist">${DOCS_REQ.map(c=>fila(c,(byCat[sinTilde(c)]||[]).slice(-1)[0])).join("")}${otros.map(d=>fila(d.categoria==="Otro"&&d.nombre?d.nombre:d.categoria,d)).join("")}</div>
   <form class="addbox stack" data-form="documento"><h3>Agregar documento</h3><div class="fgrid">
-    <div class="field"><label for="d-cat" class="req">Tipo de documento</label><input id="d-cat" name="categoria" list="dl-docs" required placeholder="Elige o escribe"><datalist id="dl-docs">${DOCS_REQ.map(c=>`<option>${c}</option>`).join("")}<option>Otrosí</option><option>Certificado laboral</option><option>Acta de entrega de EPP</option><option>Evaluación de desempeño</option></datalist></div>
+    <div class="field"><label for="d-cat" class="req">Tipo de documento</label><select id="d-cat" name="categoria" required><option value="">Elige el tipo…</option><optgroup label="Expediente básico">${DOCS_REQ.map(c=>`<option>${c}</option>`).join("")}</optgroup><optgroup label="Otros documentos">${DOCS_EXTRA.map(c=>`<option>${c}</option>`).join("")}</optgroup></select></div>
     <div class="field"><label for="d-fecha">Fecha del documento</label><input id="d-fecha" name="fecha" type="date" value="${iso(today())}"></div>
     <div class="field"><label for="d-vence">Vence</label><input id="d-vence" name="vence" type="date"><span class="hint">Para certificados con vigencia (manipulación de alimentos, alturas).</span></div>
-    <div class="field"><label for="d-nom">Descripción</label><input id="d-nom" name="nombre"></div>
+    <div class="field"><label for="d-nom">Descripción</label><input id="d-nom" name="nombre" placeholder="Obligatoria si eliges “Otro”"></div>
     <div class="field"><label for="d-file">Archivo</label><input id="d-file" name="file" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" ${S.assets?"":"disabled"}></div>
   </div><div class="formfoot" style="border:0;padding:0"><button class="btn pri" type="submit">Agregar al expediente</button></div></form></div>`; }
 
@@ -1076,7 +1077,7 @@ document.addEventListener("submit",async ev=>{ const f=ev.target.closest("form[d
       e.contratos=old?e.contratos.map(x=>x.id===ct.id?ct:x):[...(e.contratos||[]),ct];
       if(!ct.esOtrosi&&vigente(e)&&vigente(e).id===ct.id){ if(o.cargo) e.cargo=o.cargo; if(o.salario!=="") e.salario=o.salario; }
       await saveEmp(e); if(viejo) await borrarArchivo(viejo); S.edit=null; return done(old?"Cambios guardados":ct.esOtrosi?"Otrosí registrado":"Contrato registrado"); }
-    if(kind==="documento"){ const o=leerForm(f); const file=fileOf("file"); delete o.file; const d={id:uid(),categoria:o.categoria,nombre:o.nombre,fecha:o.fecha,vence:o.vence}; if(file){ toast("Subiendo documento…"); d.archivo=await subir(file); } e.documentos=[...(e.documentos||[]),d]; await saveEmp(e); return done("Documento agregado"); }
+    if(kind==="documento"){ const o=leerForm(f); const file=fileOf("file"); delete o.file; if(o.categoria==="Otro"&&!o.nombre){ if(btn) btn.disabled=false; const x=$("#d-nom"); if(x) x.focus(); return toast("Escribe en Descripción qué documento es."); } const d={id:uid(),categoria:o.categoria,nombre:o.nombre,fecha:o.fecha,vence:o.vence}; if(file){ toast("Subiendo documento…"); d.archivo=await subir(file); } e.documentos=[...(e.documentos||[]),d]; await saveEmp(e); return done("Documento agregado"); }
     if(kind==="novedad"){ const o=leerForm(f); const file=fileOf("file"); delete o.file; let dias=o.dias; if(dias===""&&o.hasta&&o.tipo!=="Vacaciones"){ const a=toD(o.desde),b=toD(o.hasta); if(a&&b) dias=diff(a,b)+1; }
       const edId=S.edit&&S.edit.t==="nov"?S.edit.id:null; const old=edId?(e.novedades||[]).find(x=>x.id===edId):null; if(edId&&!old){ S.edit=null; if(btn) btn.disabled=false; return toast("Esa novedad ya no existe."); }
       const n={...(old||{}),id:old?old.id:uid(),tipo:o.tipo,desde:o.desde,hasta:o.hasta,dias:dias===""?"":Number(dias),nota:o.nota}; delete n.diasComp; delete n.valorComp; delete n.valorAuto; let aviso="";
